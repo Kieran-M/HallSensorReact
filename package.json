@@ -5,17 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@tailwindcss/vite": "^4.3.1",
     "axios": "^1.18.0",
     "leva": "^0.10.1",
+    "lucide-react": "^1.21.0",
+    "plotly.js": "^3.7.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-plotly.js": "^4.0.0",
+    "tailwind-variants": "^3.2.2",
     "tailwindcss": "^4.3.1",
     "three": "^0.184.0",
     "zustand": "^5.0.14"
