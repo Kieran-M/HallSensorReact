@@ -1,42 +1,65 @@
 import { runSimulation } from "../lib/simulationApi";
-import { useSimulatorStore } from "../store/simulatorStore";
+import {
+  useSimulatorStore,
+  simulationFramesRef,
+} from "../store/simulatorStore";
+import { useShallow } from "zustand/shallow";
 
-export function useSimulation() {
-  const store = useSimulatorStore((s) => s);
+// type SimConfig = {
+//   startPosition: { x: number; y: number; z: number };
+//   endPosition: { x: number; y: number; z: number };
+//   startRotation: { x: number; y: number; z: number };
+//   endRotation: { x: number; y: number; z: number };
+//   duration: number;
+// };
 
-  const setSimulationFrames = useSimulatorStore((s) => s.setSimulationFrames);
+const useSimConfig = () =>
+  useSimulatorStore(
+    useShallow((s) => ({
+      magnet: s.magnet,
+      sensor: s.sensor,
+      movement: s.animation,
+      startPosition: s.animation.startPosition,
+      endPosition: s.animation.endPosition,
+      startRotation: s.animation.startRotation,
+      endRotation: s.animation.endRotation,
+      duration: s.duration,
+    })),
+  );
 
-  const setCurrentTime = useSimulatorStore((s) => s.setCurrentTime);
+export function useSimulation(): {
+  simulate: () => Promise<void>;
+} {
+  const cfg = useSimConfig();
 
-  const setMode = useSimulatorStore((s) => s.setMode);
+  const { setCurrentTime, setMode, setView, play } =
+    useSimulatorStore.getState();
 
-  const setView = useSimulatorStore((s) => s.setView);
-
-  const play = useSimulatorStore((s) => s.play);
-
-  const simulate = async () => {
+  const simulate = async (): Promise<void> => {
     const result = await runSimulation({
+      magnet: cfg.magnet,
+      sensor: cfg.sensor,
       movement: {
         type: "linear",
-        startPosition: store.animation.startPosition,
-        endPosition: store.animation.endPosition,
-        startRotation: store.animation.startRotation,
-        endRotation: store.animation.endRotation,
+        startPosition: cfg.startPosition,
+        endPosition: cfg.endPosition,
+        startRotation: cfg.startRotation,
+        endRotation: cfg.endRotation,
       },
       fps: 60,
-      duration: store.duration,
+      duration: cfg.duration,
     });
 
-    setSimulationFrames(result.frames);
+    simulationFramesRef.current = result.frames;
 
-    setCurrentTime(0);
-
+    useSimulatorStore.setState({
+      currentTime: 0,
+      mode: "playback",
+      view: "results",
+    });
     setMode("playback");
-
     setView("results");
-
     play();
   };
-
   return { simulate };
 }

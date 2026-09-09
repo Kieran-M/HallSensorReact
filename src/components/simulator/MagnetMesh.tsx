@@ -1,8 +1,11 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import { useSimulatorStore, type MagnetParams } from "../../store/simulatorStore";
-
-// ─── Pole colours ─────────────────────────────────────────────────────────────
+import {
+  useSimulatorStore,
+  simulationFramesRef,
+  type MagnetParams,
+} from "../../store/simulatorStore";
+import { useShallow } from "zustand/shallow";
 
 const POLE_COLORS = [["#e63946", "#457b9d"]];
 
@@ -10,17 +13,18 @@ function getPoleColor(poleIndex: number, isNorth: boolean): string {
   const pair = POLE_COLORS[Math.floor(poleIndex / 2) % POLE_COLORS.length];
   return isNorth ? pair[0] : pair[1];
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 interface PoleSegmentProps {
   position: [number, number, number];
   rotation?: [number, number, number];
   geometry: React.ReactNode;
   color: string;
 }
-
-function PoleSegment({ position, rotation, geometry, color }: PoleSegmentProps) {
+function PoleSegment({
+  position,
+  rotation,
+  geometry,
+  color,
+}: PoleSegmentProps) {
   return (
     <mesh position={position} rotation={rotation}>
       {geometry}
@@ -29,15 +33,21 @@ function PoleSegment({ position, rotation, geometry, color }: PoleSegmentProps) 
   );
 }
 
-// ─── Shape builders ───────────────────────────────────────────────────────────
-
-function BarMagnetMesh({ poles, length, width, height }: {
+/* ──────────────────────────────────────────────────────────────
+   Geometry builders – each returns a <group> of <PoleSegment>s
+   ────────────────────────────────────────────────────────────── */
+function BarMagnetMesh({
+  poles,
+  length,
+  width,
+  height,
+}: {
   poles: number;
   length: number;
   width: number;
   height: number;
 }) {
-  // store values are in mm, three.js uses metres
+  // Store values are in mm → three.js works in metres
   const l = length / 1000;
   const w = width / 1000;
   const h = height / 1000;
@@ -61,15 +71,22 @@ function BarMagnetMesh({ poles, length, width, height }: {
   );
 }
 
-function CylinderMagnetMesh({ poles, outerDiameter, height, axial }: {
+/* -------------------- Cylinder (axial / diametric) -------------------- */
+function CylinderMagnetMesh({
+  poles,
+  outerDiameter,
+  height,
+  axial,
+}: {
   poles: number;
   outerDiameter: number;
   height: number;
   axial: boolean;
 }) {
-  const radius = outerDiameter / 2000; // mm -> m, then halve
+  const radius = outerDiameter / 2000; // mm → m then halve
   const h = height / 1000;
 
+  // Axial → stacked cylinders
   if (axial) {
     const segmentHeight = h / poles;
     return (
@@ -90,6 +107,7 @@ function CylinderMagnetMesh({ poles, outerDiameter, height, axial }: {
     );
   }
 
+  // Diametric → wedge‑shaped slices of a full cylinder
   return (
     <group>
       {Array.from({ length: poles }).map((_, i) => {
@@ -116,20 +134,43 @@ function CylinderMagnetMesh({ poles, outerDiameter, height, axial }: {
   );
 }
 
-function CylinderWedgeGeometry({ radius, height, angleStart, angleEnd }: {
+/* -------------------- Cylinder wedge geometry -------------------- */
+function CylinderWedgeGeometry({
+  radius,
+  height,
+  angleStart,
+  angleEnd,
+}: {
   radius: number;
   height: number;
   angleStart: number;
   angleEnd: number;
 }) {
   const geometry = useMemo(
-    () => new THREE.CylinderGeometry(radius, radius, height, 32, 1, false, angleStart, angleEnd - angleStart),
+    () =>
+      new THREE.CylinderGeometry(
+        radius,
+        radius,
+        height,
+        32,
+        1,
+        false,
+        angleStart,
+        angleEnd - angleStart
+      ),
     [radius, height, angleStart, angleEnd]
   );
   return <primitive object={geometry} />;
 }
 
-function RingMagnetMesh({ poles, outerDiameter, innerDiameter, height, axial }: {
+/* -------------------- Ring (axial / diametric) -------------------- */
+function RingMagnetMesh({
+  poles,
+  outerDiameter,
+  innerDiameter,
+  height,
+  axial,
+}: {
   poles: number;
   outerDiameter: number;
   innerDiameter: number;
@@ -140,6 +181,7 @@ function RingMagnetMesh({ poles, outerDiameter, innerDiameter, height, axial }: 
   const innerRadius = innerDiameter / 2000;
   const h = height / 1000;
 
+  // Axial → stacked ring‑sections
   if (axial) {
     const segmentHeight = h / poles;
     return (
@@ -168,6 +210,7 @@ function RingMagnetMesh({ poles, outerDiameter, innerDiameter, height, axial }: 
     );
   }
 
+  // Diametric → wedge‑shaped slices of a torus‑like ring
   return (
     <group>
       {Array.from({ length: poles }).map((_, i) => {
@@ -195,7 +238,14 @@ function RingMagnetMesh({ poles, outerDiameter, innerDiameter, height, axial }: 
   );
 }
 
-function RingWedgeGeometry({ outerRadius, innerRadius, height, angleStart, angleEnd }: {
+/* -------------------- Ring wedge geometry -------------------- */
+function RingWedgeGeometry({
+  outerRadius,
+  innerRadius,
+  height,
+  angleStart,
+  angleEnd,
+}: {
   outerRadius: number;
   innerRadius: number;
   height: number;
@@ -207,7 +257,9 @@ function RingWedgeGeometry({ outerRadius, innerRadius, height, angleStart, angle
     const arcLength = angleEnd - angleStart;
     const segments = Math.max(4, Math.round((arcLength / (Math.PI * 2)) * 32));
 
+    // outer arc
     shape.absarc(0, 0, outerRadius, angleStart, angleEnd, false);
+    // inner arc (reverse direction)
     shape.absarc(0, 0, innerRadius, angleEnd, angleStart, true);
     shape.closePath();
 
@@ -216,7 +268,9 @@ function RingWedgeGeometry({ outerRadius, innerRadius, height, angleStart, angle
       bevelEnabled: false,
       curveSegments: segments,
     });
+    // Center the geometry on the Z‑axis
     geo.translate(0, 0, -height / 2);
+    // Rotate so the wedge points upward (Three’s default is +Y)
     geo.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2));
     return geo;
   }, [outerRadius, innerRadius, height, angleStart, angleEnd]);
@@ -224,9 +278,12 @@ function RingWedgeGeometry({ outerRadius, innerRadius, height, angleStart, angle
   return <primitive object={geometry} />;
 }
 
-// ─── Extracted sphere segment so hooks are called at component level ──────────
-
-function SpherePoleSegment({ radius, poleIndex, poles }: {
+/* -------------------- Sphere pole segment -------------------- */
+function SpherePoleSegment({
+  radius,
+  poleIndex,
+  poles,
+}: {
   radius: number;
   poleIndex: number;
   poles: number;
@@ -236,7 +293,16 @@ function SpherePoleSegment({ radius, poleIndex, poles }: {
   const phiLength = Math.PI / poles;
 
   const geometry = useMemo(
-    () => new THREE.SphereGeometry(radius, 32, 16, 0, Math.PI * 2, phiStart, phiLength),
+    () =>
+      new THREE.SphereGeometry(
+        radius,
+        32,
+        16,
+        0,
+        Math.PI * 2,
+        phiStart,
+        phiLength
+      ),
     [radius, phiStart, phiLength]
   );
 
@@ -248,8 +314,15 @@ function SpherePoleSegment({ radius, poleIndex, poles }: {
   );
 }
 
-function SphereMagnetMesh({ poles, diameter }: { poles: number; diameter: number }) {
-  const radius = diameter / 2000;
+/* -------------------- Full sphere magnet -------------------- */
+function SphereMagnetMesh({
+  poles,
+  diameter,
+}: {
+  poles: number;
+  diameter: number;
+}) {
+  const radius = diameter / 2000; // mm → m (halve)
   return (
     <group>
       {Array.from({ length: poles }).map((_, i) => (
@@ -259,76 +332,79 @@ function SphereMagnetMesh({ poles, diameter }: { poles: number; diameter: number
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
+/* ──────────────────────────────────────────────────────────────
+   MAIN COMPONENT – Magnet
+   ────────────────────────────────────────────────────────────── */
 export function Magnet({ config }: { config: MagnetParams }) {
   const poles = config.poles % 2 !== 0 || config.poles < 2 ? 2 : config.poles;
-  // const animation = useSimulatorStore((s) => s.animation);
-  // const mode = useSimulatorStore((s) => s.mode);
-  // const groupRef = useRef<THREE.Group>(null);
-  const frames = useSimulatorStore((s) => s.simulationFrames);
-  const currentTime = useSimulatorStore((s) => s.currentTime);
-  const FPS = 60;
-  const frameFloat =
-    Math.floor(currentTime * FPS);
 
-  const frameIndex = Math.floor(frameFloat);
+  const { animation, mode, currentTime } = useSimulatorStore(
+    useShallow((s) => ({
+      animation: s.animation,
+      mode: s.mode,
+      currentTime: s.currentTime,
+    })),
+  );
 
-  const frameA =
-    frames[frameIndex];
+  const frames = simulationFramesRef.current;
 
-  const frameB =
-    frames[
-    Math.min(
-      frameIndex + 1,
-      frames.length - 1
-    )
+  const { position, rotation } = useMemo(() => {
+    if (frames.length === 0 || mode === "edit") {
+      const pos: [number, number, number] = [
+        animation.startPosition.x,
+        animation.startPosition.y,
+        animation.startPosition.z,
+      ];
+      const rot: [number, number, number] = [
+        animation.startRotation.x,
+        animation.startRotation.y,
+        animation.startRotation.z,
+      ];
+      return { position: pos, rotation: rot };
+    }
+
+    const FPS = 60;
+    const frameFloat = currentTime * FPS; // e.g. 3.2 s → 192.0 frames
+    const frameIdx = Math.floor(frameFloat);
+    const alpha = frameFloat - frameIdx; // fractional part for lerp
+
+    const frameA = frames[frameIdx];
+    const frameB = frames[Math.min(frameIdx + 1, frames.length - 1)];
+
+    const lerp = (a: number, b: number) => a + (b - a) * alpha;
+
+    const pos: [number, number, number] = [
+      lerp(frameA.position[0], frameB.position[0]),
+      lerp(frameA.position[1], frameB.position[1]),
+      lerp(frameA.position[2], frameB.position[2]),
     ];
 
-  const alpha =
-    frameFloat - frameIndex;
+    const rot: [number, number, number] = [
+      lerp(frameA.rotation[0], frameB.rotation[0]),
+      lerp(frameA.rotation[1], frameB.rotation[1]),
+      lerp(frameA.rotation[2], frameB.rotation[2]),
+    ];
 
-  const position: [number, number, number] =
-    frameA && frameB
-      ? [
-        frameA.position[0] +
-        (frameB.position[0] -
-          frameA.position[0]) *
-        alpha,
+    return { position: pos, rotation: rot };
+  }, [
+    frames,
+    mode,
+    animation.startPosition.x,
+    animation.startPosition.y,
+    animation.startPosition.z,
+    animation.startRotation.x,
+    animation.startRotation.y,
+    animation.startRotation.z,
+    animation.endPosition.x,
+    animation.endPosition.y,
+    animation.endPosition.z,
+    animation.endRotation.x,
+    animation.endRotation.y,
+    animation.endRotation.z,
+    currentTime,
+  ]);
 
-        frameA.position[1] +
-        (frameB.position[1] -
-          frameA.position[1]) *
-        alpha,
-
-        frameA.position[2] +
-        (frameB.position[2] -
-          frameA.position[2]) *
-        alpha,
-      ]
-      : [0, 0, 0];
-
-  const rotation: [number, number, number] =
-    frameA && frameB
-      ? [
-        frameA.rotation[0] +
-        (frameB.rotation[0] -
-          frameA.rotation[0]) *
-        alpha,
-
-        frameA.rotation[1] +
-        (frameB.rotation[1] -
-          frameA.rotation[1]) *
-        alpha,
-
-        frameA.rotation[2] +
-        (frameB.rotation[2] -
-          frameA.rotation[2]) *
-        alpha,
-      ]
-      : [0, 0, 0];
-
-  const renderMagnet = () => {
+  const renderMagnet = useMemo(() => {
     switch (config.shape) {
       case "bar":
         return (
@@ -379,12 +455,14 @@ export function Magnet({ config }: { config: MagnetParams }) {
         );
       case "sphere":
         return <SphereMagnetMesh poles={poles} diameter={config.diameter} />;
+      default:
+        return null;
     }
-  }
+  }, [config, poles]);
 
   return (
     <group position={position} rotation={rotation}>
-      {renderMagnet()}
+      {renderMagnet}
     </group>
   );
 }

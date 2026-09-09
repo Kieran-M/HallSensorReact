@@ -1,4 +1,3 @@
-// // src/components/sidebar/MagnetGeometrySection.tsx
 // import { useSimulatorStore } from "../../store/simulatorStore";
 // import { SelectInput } from "./inputs/SelectInput";
 // import { NumberInput } from "./inputs/NumberInput";

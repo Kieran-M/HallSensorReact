@@ -1,7 +1,6 @@
 import { useSimulatorStore } from "../../store/simulatorStore";
 import { SelectInput } from "./inputs/SelectInput";
 import { NumberInput } from "./inputs/NumberInput";
-import type { MagnetShape } from "../../store/simulatorStore";
 
 const SHAPE_OPTIONS = [
   { label: "Bar", value: "bar" },
@@ -20,7 +19,7 @@ export function MagnetGeometrySection() {
       <SelectInput
         label="Shape"
         value={magnet.shape}
-        onChange={(v: MagnetShape) => setMagnetShape(v)}
+        onChange={setMagnetShape}
         options={SHAPE_OPTIONS}
       />
       <ShapeInputs />

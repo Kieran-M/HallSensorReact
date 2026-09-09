@@ -29,6 +29,15 @@ export function SidePanel() {
 
   const { simulate } = useSimulation();
 
+  const handleSimulate = async () => {
+    console.log("HGADJGHADJKGHKJ")
+    try {
+      await simulate();
+    } catch (e) {
+      console.error("Simulation failed:", e);
+    }
+  };
+
   return (
     <div
       className="
@@ -65,10 +74,9 @@ export function SidePanel() {
               font-medium
               transition-colors
 
-              ${
-                activeTab === tab.id
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-slate-500 hover:text-slate-700"
+              ${activeTab === tab.id
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-slate-500 hover:text-slate-700"
               }
             `}
           >
@@ -112,11 +120,11 @@ export function SidePanel() {
 
         {activeTab ===
           "simSettings" && (
-          <PropertyCard title="Simulation">
-            Simulation settings
-            coming soon
-          </PropertyCard>
-        )}
+            <PropertyCard title="Simulation">
+              Simulation settings
+              coming soon
+            </PropertyCard>
+          )}
       </div>
 
       {/* Footer */}
@@ -148,8 +156,7 @@ export function SidePanel() {
             hover:bg-blue-700
             transition-colors
           "
-
-          onClick={simulate}
+          onClick={handleSimulate}
         >
           Simulate
         </button>

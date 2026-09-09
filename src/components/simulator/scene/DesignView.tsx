@@ -35,13 +35,13 @@ export function DesignView() {
           position={[-1, 1, -1]}
           intensity={1}
         />
+        <group scale={2}>
+          <Magnet config={magnet} />
 
-        <Magnet config={magnet} />
-
-        <Sensor
-          position={[0.01, 0.011, 0]}
-          scale={2}
-        />
+          <Sensor
+            position={[0, 0, 0]}
+          />
+        </group>
 
         <Grid
           args={[1, 1]}

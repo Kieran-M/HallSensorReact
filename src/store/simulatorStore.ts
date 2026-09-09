@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-interface BaseMagnetParams {
+export interface BaseMagnetParams {
   poles: number;
   material: string;
   materialGrade: string;
@@ -99,7 +99,14 @@ export const SHAPE_DEFAULTS: Record<MagnetShape, MagnetParams> = {
   sphere: { ...BASE_DEFAULTS, shape: "sphere", diameter: 10 },
 };
 
+export interface SensorPosition {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface AnimationParams {
+  type: "linear"; //TODO add more types in the future
   startPosition: { x: number; y: number; z: number };
   endPosition: { x: number; y: number; z: number };
 
@@ -124,7 +131,13 @@ interface SimulatorStore {
   magnet: MagnetParams;
   animation: AnimationParams;
   setMagnetShape: (shape: MagnetShape) => void;
-  setMagnetParam: (key: string, value: number | string) => void;
+  setMagnetParam: <K extends keyof MagnetParams>(
+    key: K,
+    value: MagnetParams[K],
+  ) => void;
+
+  sensor: SensorPosition;
+  setSensorPosition: (sensor: SensorPosition) => void;
 
   setAnimationParam: <K extends keyof AnimationParams>(
     key: K,
@@ -148,9 +161,9 @@ interface SimulatorStore {
 
   mode: SimulatorMode;
 
-  simulationFrames: SimulationFrame[];
+  //simulationFrames: SimulationFrame[];
 
-  setSimulationFrames: (frames: SimulationFrame[]) => void;
+  //setSimulationFrames: (frames: SimulationFrame[]) => void;
 
   setMode: (mode: SimulatorMode) => void;
 
@@ -162,8 +175,8 @@ interface SimulatorStore {
 export const useSimulatorStore = create<SimulatorStore>((set) => ({
   magnet: SHAPE_DEFAULTS.axial_cylinder,
   animation: {
-    startPosition: { x: 0, y: 0, z: -50 },
-    endPosition: { x: 0, y: 0, z: 50 },
+    startPosition: { x: 0, y: 0, z: 0 },
+    endPosition: { x: 0, y: 0, z: 0 },
     startRotation: { x: 0, y: 0, z: 0 },
     endRotation: { x: 0, y: 0, z: 0 },
   },
@@ -182,17 +195,21 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     })),
 
   setMagnetParam: (key, value) =>
-    set((state) => ({
-      magnet: {
-        ...state.magnet,
-        [key]: value,
-      } as MagnetParams,
-    })),
+    set((state) => ({ magnet: { ...state.magnet, [key]: value } })),
 
   setAnimationParam: (key, value) =>
     set((state) => ({ animation: { ...state.animation, [key]: value } })),
 
   resetMagnet: () => set({ magnet: SHAPE_DEFAULTS.axial_cylinder }),
+
+  sensor: {
+    x: 0,
+    y: 0,
+    z: 0,
+  },
+
+  setSensorPosition: (sensor) =>
+  set({ sensor }),
 
   playing: false,
 
@@ -209,9 +226,11 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
 
   mode: "edit",
 
-  simulationFrames: [],
+  //simulationFrames: [],
 
-  setSimulationFrames: (frames) => set({ simulationFrames: frames }),
+  //setSimulationFrames: (frames) => set({ simulationFrames: frames }),
+
+  clearFrames: () => { simulationFramesRef.current = []; },
 
   setMode: (mode) => set({ mode }),
 
@@ -221,3 +240,5 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     set({ view });
   },
 }));
+
+export const simulationFramesRef = { current: [] as SimulationFrame[] };

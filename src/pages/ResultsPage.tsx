@@ -9,7 +9,7 @@ export function ResultsPage() {
       </div>
 
       <div className="w-6/12">
-        <GraphPanel />
+        <GraphPanel count={3} />
       </div>
     </div>
   );
