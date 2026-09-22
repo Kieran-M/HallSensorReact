@@ -153,6 +153,7 @@ interface SimulatorStore {
   setCurrentTime: (time: number) => void;
 
   setDuration: (duration: number) => void;
+  clearFrames: () => void;
 
   play: () => void;
   pause: () => void;
@@ -208,8 +209,7 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     z: 0,
   },
 
-  setSensorPosition: (sensor) =>
-  set({ sensor }),
+  setSensorPosition: (sensor) => set({ sensor }),
 
   playing: false,
 
@@ -230,7 +230,9 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
 
   //setSimulationFrames: (frames) => set({ simulationFrames: frames }),
 
-  clearFrames: () => { simulationFramesRef.current = []; },
+  clearFrames: () => {
+    simulationFramesRef.current = [];
+  },
 
   setMode: (mode) => set({ mode }),
 

@@ -1,4 +1,5 @@
 import type { AnimationParams, MagnetParams, SensorPosition } from "../store/simulatorStore";
+import type { SimulationResult } from "../types/simulation";
 
 export interface XYZ {
   x: number;
@@ -16,9 +17,12 @@ export interface SimulationRequest {
 
 export async function runSimulation(
   request: SimulationRequest
-) {
+): Promise<SimulationResult> {
+  const apiUrl = (
+    import.meta.env.VITE_SIMULATION_API_URL ?? "http://localhost:8000"
+  ).replace(/\/+$/, "");
   const response = await fetch(
-    "http://localhost:8000/simulate",
+    `${apiUrl}/simulate`,
     {
       method: "POST",
       headers: {
@@ -30,11 +34,19 @@ export async function runSimulation(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.log(errorText)
     throw new Error(
       `Simulation failed: ${errorText}`
     );
   }
 
-  return await response.json();
+  const result: unknown = await response.json();
+  if (
+    typeof result !== "object" ||
+    result === null ||
+    !Array.isArray((result as { frames?: unknown }).frames)
+  ) {
+    throw new Error("Simulation returned an invalid response.");
+  }
+
+  return result as SimulationResult;
 }
