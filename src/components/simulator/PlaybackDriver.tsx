@@ -21,6 +21,7 @@ export const PlaybackDriver = () => {
     // advance the logical time (seconds)
     const next = currentTime + delta;
     const duration = frames.length / FPS; // total seconds of the simulation
+    if (duration <= 0) return;
     const clamped = next % duration;
 
     setCurrentTime(clamped);

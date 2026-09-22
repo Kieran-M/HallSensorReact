@@ -7,7 +7,7 @@ export default function App() {
 
   return (
     <>
-      {view == "design" ? (
+      {view === "design" ? (
         <DesignPage />
       ) : (
         <ResultsPage />
