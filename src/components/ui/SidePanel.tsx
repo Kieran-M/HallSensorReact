@@ -30,7 +30,6 @@ export function SidePanel() {
   const { simulate } = useSimulation();
 
   const handleSimulate = async () => {
-    console.log("HGADJGHADJKGHKJ")
     try {
       await simulate();
     } catch (e) {
