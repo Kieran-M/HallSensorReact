@@ -7,11 +7,13 @@ import { PlaybackDriver } from "../PlaybackDriver";
 import { useSimulatorStore } from "../../../store/simulatorStore";
 import { useShallow } from "zustand/shallow";
 import { memo } from "react";
+import { mmToWorld } from "../../../lib/utils";
 
 export const ResultsView = memo(() => {
-  const { magnet, view } = useSimulatorStore(
+  const { magnet, sensor, view } = useSimulatorStore(
     useShallow((s) => ({
       magnet: s.magnet,
+      sensor: s.sensor,
       view: s.view,
     }))
   );
@@ -65,7 +67,14 @@ export const ResultsView = memo(() => {
 
             {/* Geometry */}
             <Magnet config={magnet} />
-            <Sensor position={[0.01, 0.011, 0]} scale={2} />
+            <Sensor
+              position={[
+                mmToWorld(sensor.x),
+                mmToWorld(sensor.y),
+                mmToWorld(sensor.z),
+              ]}
+              scale={2}
+            />
 
             {/* Helpers */}
             <Grid args={[1, 1]} cellSize={0.01} sectionSize={0.1} fadeDistance={5} />
