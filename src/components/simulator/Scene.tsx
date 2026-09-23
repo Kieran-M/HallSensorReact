@@ -4,9 +4,13 @@ import { Magnet } from "./MagnetMesh";
 import { useSimulatorStore } from "../../store/simulatorStore";
 import { Sensor } from "./Sensor";
 import { SimulationPlayback } from "./SimulatorPlayback";
+import { mmToWorld } from "../../lib/utils";
 
 export function Scene() {
-  const magnet = useSimulatorStore((s) => s.magnet);
+  const { magnet, sensor } = useSimulatorStore((s) => ({
+    magnet: s.magnet,
+    sensor: s.sensor,
+  }));
 
   return (
     <Canvas
@@ -21,10 +25,15 @@ export function Scene() {
       {/* Fill light */}
       <directionalLight position={[-1, 1, -1]} intensity={1} />
       <SimulationPlayback />
-      <Magnet
-        config={magnet}
+      <Magnet config={magnet} />
+      <Sensor
+        position={[
+          mmToWorld(sensor.x),
+          mmToWorld(sensor.y),
+          mmToWorld(sensor.z),
+        ]}
+        scale={2}
       />
-      <Sensor position={[0.01, 0.011, 0]} scale={2} />
       <Grid args={[1, 1]} cellSize={0.01} sectionSize={0.1} />
       <OrbitControls makeDefault minDistance={0.001} />
     </Canvas>

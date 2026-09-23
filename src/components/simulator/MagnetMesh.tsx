@@ -6,6 +6,7 @@ import {
   type MagnetParams,
 } from "../../store/simulatorStore";
 import { useShallow } from "zustand/shallow";
+import { mmToWorld } from "../../lib/utils";
 
 const POLE_COLORS = [["#e63946", "#457b9d"]];
 
@@ -47,10 +48,9 @@ function BarMagnetMesh({
   width: number;
   height: number;
 }) {
-  // Store values are in mm → three.js works in metres
-  const l = length / 1000;
-  const w = width / 1000;
-  const h = height / 1000;
+  const l = mmToWorld(length);
+  const w = mmToWorld(width);
+  const h = mmToWorld(height);
   const segmentLength = l / poles;
 
   return (
@@ -83,8 +83,8 @@ function CylinderMagnetMesh({
   height: number;
   axial: boolean;
 }) {
-  const radius = outerDiameter / 2000; // mm → m then halve
-  const h = height / 1000;
+  const radius = mmToWorld(outerDiameter) / 2;
+  const h = mmToWorld(height);
 
   // Axial → stacked cylinders
   if (axial) {
@@ -177,9 +177,9 @@ function RingMagnetMesh({
   height: number;
   axial: boolean;
 }) {
-  const outerRadius = outerDiameter / 2000;
-  const innerRadius = innerDiameter / 2000;
-  const h = height / 1000;
+  const outerRadius = mmToWorld(outerDiameter) / 2;
+  const innerRadius = mmToWorld(innerDiameter) / 2;
+  const h = mmToWorld(height);
 
   // Axial → stacked ring‑sections
   if (axial) {
@@ -322,7 +322,7 @@ function SphereMagnetMesh({
   poles: number;
   diameter: number;
 }) {
-  const radius = diameter / 2000; // mm → m (halve)
+  const radius = mmToWorld(diameter) / 2;
   return (
     <group>
       {Array.from({ length: poles }).map((_, i) => (
@@ -351,9 +351,9 @@ export function Magnet({ config }: { config: MagnetParams }) {
   const { position, rotation } = useMemo(() => {
     if (frames.length === 0 || mode === "edit") {
       const pos: [number, number, number] = [
-        animation.startPosition.x,
-        animation.startPosition.y,
-        animation.startPosition.z,
+        mmToWorld(animation.startPosition.x),
+        mmToWorld(animation.startPosition.y),
+        mmToWorld(animation.startPosition.z),
       ];
       const rot: [number, number, number] = [
         animation.startRotation.x,
@@ -374,9 +374,9 @@ export function Magnet({ config }: { config: MagnetParams }) {
     const lerp = (a: number, b: number) => a + (b - a) * alpha;
 
     const pos: [number, number, number] = [
-      lerp(frameA.position[0], frameB.position[0]),
-      lerp(frameA.position[1], frameB.position[1]),
-      lerp(frameA.position[2], frameB.position[2]),
+      mmToWorld(lerp(frameA.position[0], frameB.position[0])),
+      mmToWorld(lerp(frameA.position[1], frameB.position[1])),
+      mmToWorld(lerp(frameA.position[2], frameB.position[2])),
     ];
 
     const rot: [number, number, number] = [

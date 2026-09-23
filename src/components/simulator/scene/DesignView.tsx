@@ -5,9 +5,13 @@ import { Magnet } from "../MagnetMesh";
 import { Sensor } from "../Sensor";
 
 import { useSimulatorStore } from "../../../store/simulatorStore";
+import { mmToWorld } from "../../../lib/utils";
 
 export function DesignView() {
-  const magnet = useSimulatorStore((s) => s.magnet);
+  const { magnet, sensor } = useSimulatorStore((s) => ({
+    magnet: s.magnet,
+    sensor: s.sensor,
+  }));
 
   return (
     <div className="relative w-full h-full">
@@ -39,7 +43,11 @@ export function DesignView() {
           <Magnet config={magnet} />
 
           <Sensor
-            position={[0, 0, 0]}
+            position={[
+              mmToWorld(sensor.x),
+              mmToWorld(sensor.y),
+              mmToWorld(sensor.z),
+            ]}
           />
         </group>
 
