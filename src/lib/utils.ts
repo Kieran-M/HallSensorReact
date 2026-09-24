@@ -10,6 +10,16 @@ export const mmToWorld = (mm: number) => mm * MM_TO_WORLD;
 
 export const worldToMm = (world: number) => world / MM_TO_WORLD;
 
+export const positionMmToWorld = (pos: {
+  x: number;
+  y: number;
+  z: number;
+}) => ({
+  x: mmToWorld(pos.x),
+  y: mmToWorld(pos.y),
+  z: mmToWorld(pos.z),
+});
+
 export const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);

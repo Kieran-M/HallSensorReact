@@ -7,35 +7,36 @@ import { SimulationPlayback } from "./SimulatorPlayback";
 import { mmToWorld } from "../../lib/utils";
 
 export function Scene() {
-  const { magnet, sensor } = useSimulatorStore((s) => ({
-    magnet: s.magnet,
-    sensor: s.sensor,
-  }));
+  const magnet = useSimulatorStore((s) => s.magnet);
+  const sensor = useSimulatorStore((s) => s.sensor);
 
   return (
-    <Canvas
-      camera={{ position: [0.3, 0.3, 0.3], fov: 50, near: 0.001, far: 1000 }}
-      style={{ width: "100%", height: "100%", background: "#e2e2e2" }}
-    >
-      <ambientLight intensity={1.2} />
+    <>
 
-      {/* Key light */}
-      <directionalLight position={[1, 2, 1]} intensity={2.5} />
+      <Canvas
+        camera={{ position: [0.3, 0.3, 0.3], fov: 50, near: 0.001, far: 1000 }}
+        style={{ width: "100%", height: "100%", background: "#e2e2e2" }}
+      >
+        <ambientLight intensity={1.2} />
 
-      {/* Fill light */}
-      <directionalLight position={[-1, 1, -1]} intensity={1} />
-      <SimulationPlayback />
-      <Magnet config={magnet} />
-      <Sensor
-        position={[
-          mmToWorld(sensor.x),
-          mmToWorld(sensor.y),
-          mmToWorld(sensor.z),
-        ]}
-        scale={2}
-      />
-      <Grid args={[1, 1]} cellSize={0.01} sectionSize={0.1} />
-      <OrbitControls makeDefault minDistance={0.001} />
-    </Canvas>
+        {/* Key light */}
+        <directionalLight position={[1, 2, 1]} intensity={2.5} />
+
+        {/* Fill light */}
+        <directionalLight position={[-1, 1, -1]} intensity={1} />
+        <SimulationPlayback />
+        <Magnet config={magnet} />
+        <Sensor
+          position={[
+            mmToWorld(sensor.x),
+            mmToWorld(sensor.y),
+            mmToWorld(sensor.z),
+          ]}
+          scale={2}
+        />
+        <Grid args={[1, 1]} cellSize={0.01} sectionSize={0.1} />
+        <OrbitControls makeDefault minDistance={0.001} />
+      </Canvas>
+    </>
   );
 }

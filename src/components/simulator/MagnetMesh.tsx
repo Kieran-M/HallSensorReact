@@ -346,9 +346,11 @@ export function Magnet({ config }: { config: MagnetParams }) {
     })),
   );
 
+
   const frames = simulationFramesRef.current;
 
   const { position, rotation } = useMemo(() => {
+
     if (frames.length === 0 || mode === "edit") {
       const pos: [number, number, number] = [
         mmToWorld(animation.startPosition.x),

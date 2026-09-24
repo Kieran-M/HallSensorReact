@@ -125,7 +125,7 @@ export interface SimulationFrame {
 
 export type SimulatorMode = "edit" | "playback";
 
-export type SimulatorView = "design" | "results";
+export type SimulatorView = "presets" | "design" | "results";
 
 interface SimulatorStore {
   magnet: MagnetParams;
@@ -226,17 +226,13 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
 
   mode: "edit",
 
-  //simulationFrames: [],
-
-  //setSimulationFrames: (frames) => set({ simulationFrames: frames }),
-
   clearFrames: () => {
     simulationFramesRef.current = [];
   },
 
   setMode: (mode) => set({ mode }),
 
-  view: "design",
+  view: "presets",
 
   setView(view) {
     set({ view });
