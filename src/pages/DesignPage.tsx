@@ -8,7 +8,7 @@ export function DesignPage() {
 
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col">
       {/* Header */}
-      <header className="border-b border-[var(--border)] px-6 py-3 flex items-center justify-between sticky top-0 z-20 backdrop-blur-sm bg-[var(--background)]/90">
+      <header className="border-b border-[var(--border)] px-6 py-3 flex items-center justify-between z-20 bg-[var(--background)]/90">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setView('presets')}
@@ -38,13 +38,15 @@ export function DesignPage() {
           </div>
         </div>
       </header>
-      {/* <div className="flex-1">
-        <DesignView />
-      </div>
+      <div className="flex flex-row max-h-screen h-dvh">
+        <div className="flex-1">
+          <DesignView />
+        </div>
 
-      <div className="w-100">
-        <SidePanel />
-      </div> */}
+        <div className="w-100">
+          <SidePanel />
+        </div>
+      </div>
     </div>
   );
 }

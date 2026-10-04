@@ -49,9 +49,13 @@ export function DesignView() {
           />
 
           <Grid
+            infiniteGrid
             args={[1, 1]}
             cellSize={0.01}
             sectionSize={0.1}
+            fadeDistance={12}
+            cellColor="#1a2030"
+            sectionColor="#00d4ff"
           />
 
           <OrbitControls
