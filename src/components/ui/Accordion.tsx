@@ -1,108 +1,38 @@
-import { useRef, useEffect, useState } from "react";
-import { ChevronRight } from "lucide-react";
-
-interface AccordionSection {
-  id: string;
-  title: string;
-  content: any;
-}
-
-function AccordionItem({
-  section,
-  isOpen,
+function Accordion({
+  title,
+  open,
   onToggle,
+  children,
 }: {
-  section: AccordionSection;
-  isOpen: boolean;
-  onToggle: () => void;
+  title: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
 }) {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(0);
-
-  useEffect(() => {
-    const el = contentRef.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver(() => {
-      setHeight(isOpen ? el.scrollHeight : 0);
-    });
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [isOpen]);
-
   return (
-    <div className="border-b border-gray-200 last:border-b-0">
+    <div className="border border-[var(--border)] rounded-sm overflow-hidden">
       <button
-        className="flex flex-row items-center w-full px-4 py-3 bg-slate-300 border-b border-b-slate-400 transition-colors duration-150 cursor-pointer group"
         onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--muted)]/30 hover:bg-[var(--muted)]/60 transition-colors cursor-pointer"
       >
-        <div className="flex items-center text-gray-400 group-hover:text-gray-600 transition-colors duration-150">
-          <ChevronRight
-            className={`w-6 h-6 transition-transform duration-300 ${isOpen ? "rotate-90" : "rotate-0"
-              }`}
-          />
-        </div>
-        <span className="font-semibold items-center text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-150">
-          {section.title}
-        </span>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--accent)]">{title}</span>
+        <svg
+          viewBox="0 0 12 12"
+          className="w-3 h-3 text-[var(--muted-foreground)] transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        >
+          <path d="M2 4l4 4 4-4" />
+        </svg>
       </button>
-
-      <div
-        style={{
-          height,
-          overflow: "hidden",
-          transition: "height 300ms ease-in-out",
-        }}
-      >
-        <div ref={contentRef} className="px-4 py-3 text-sm text-gray-600">
-          {section.content}
+      {open && (
+        <div className="px-4 py-4 space-y-3 border-t border-[var(--border)]">
+          {children}
         </div>
-      </div>
+      )}
     </div>
-  );
+  )
 }
-
-type AccordionProps =
-  | {
-    sections: AccordionSection[];
-    openId?: never;
-    onToggle?: never;
-  }
-  | {
-    sections: AccordionSection[];
-    openId: string | null;
-    onToggle: (id: string) => void;
-  };
-
-function Accordion({ sections, openId, onToggle }: AccordionProps) {
-  const [internalOpenId, setInternalOpenId] = useState<string | null>(
-    sections[0]?.id ?? null
-  );
-
-  const isControlled = openId !== undefined;
-  const activeId = isControlled ? openId : internalOpenId;
-
-  function handleToggle(id: string) {
-    if (isControlled) {
-      onToggle!(id);
-    } else {
-      setInternalOpenId((prev) => (prev === id ? null : id));
-    }
-  }
-
-  return (
-    <div className="flex flex-col w-full">
-      {sections.map((section) => (
-        <AccordionItem
-          key={section.id}
-          section={section}
-          isOpen={activeId === section.id}
-          onToggle={() => handleToggle(section.id)}
-        />
-      ))}
-    </div>
-  );
-}
-
-export default Accordion;

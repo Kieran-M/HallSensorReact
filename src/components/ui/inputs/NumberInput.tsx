@@ -1,57 +1,35 @@
-interface NumberInputProps {
-  label: string;
-  value: number | string;
-  onChange: (value: number) => void;
-  unit?: string;
-}
-
-export function NumberInput({
+export default function NumberInput({
   label,
   value,
   onChange,
-  unit,
-}: NumberInputProps) {
+  min,
+  max,
+  step = 0.1,
+  unit = '',
+}: {
+  label: string
+  value: number
+  onChange: (v: number) => void
+  min?: number
+  max?: number
+  step?: number
+  unit?: string
+}) {
   return (
-    <div className="flex items-center justify-between gap-4 py-1">
-      <label className="text-sm text-slate-600">
-        {label}
-      </label>
-
-      <div className="flex items-center">
+    <div className="flex items-center justify-between gap-3">
+      <label className="font-mono text-[9px] uppercase tracking-widest text-[var(--muted-foreground)] shrink-0">{label}</label>
+      <div className="flex items-center gap-1.5">
         <input
           type="number"
           value={value}
-          onChange={(e) =>
-            onChange(Number(e.target.value))
-          }
-          className="
-            w-24
-
-            rounded-md
-            border
-            border-slate-300
-
-            bg-white
-
-            px-2
-            py-1.5
-
-            text-right
-            text-sm
-
-            focus:outline-none
-            focus:border-blue-500
-            focus:ring-2
-            focus:ring-blue-200
-          "
+          min={min}
+          max={max}
+          step={step}
+          onChange={e => onChange(parseFloat(e.target.value) || 0)}
+          className="w-20 font-mono text-[11px] bg-[var(--muted)] border border-[var(--border)] text-[var(--foreground)] rounded-sm px-2 py-1.5 text-right focus:outline-none focus:border-[var(--accent)] transition-colors"
         />
-
-        {unit && (
-          <span className="ml-2 text-sm text-slate-500 w-10">
-            {unit}
-          </span>
-        )}
+        {unit && <span className="font-mono text-[9px] text-[var(--muted-foreground)] w-5 shrink-0">{unit}</span>}
       </div>
     </div>
-  );
+  )
 }
