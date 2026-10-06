@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# HallSim (React)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Vite + React + Three.js frontend for the Hall sensor simulator.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js **20+** (24 recommended; see `.nvmrc`)
+- npm 10+ (comes with Node)
 
-## React Compiler
+Companion API: `../HallSensorBackend` (must be running for Simulate).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd HallSensorReact
+cp .env.example .env   # optional; defaults already point at localhost:8000
+npm ci                 # clean install from package-lock.json
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+If `npm ci` fails because the lockfile was regenerated locally, use `npm install` once, commit the updated `package-lock.json`, then prefer `npm ci` thereafter.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev       # Vite at http://localhost:5173
+npm run build     # production bundle -> dist/
+npm run preview   # serve dist/
+npm run lint      # ESLint
 ```
+
+Typecheck (project references):
+
+```bash
+npx tsc --noEmit -p tsconfig.app.json
+```
+
+## Environment
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `VITE_SIMULATION_API_URL` | `http://localhost:8000` | Backend origin for `/simulate` |
+
+## Local full stack
+
+1. Start the backend (`uvicorn app.main:app --reload --port 8000` in `HallSensorBackend`)
+2. `npm run dev` in this repo
+3. Open http://localhost:5173

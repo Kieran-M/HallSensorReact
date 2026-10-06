@@ -1,65 +1,42 @@
 import { runSimulation } from "../lib/simulationApi";
-import {
-  useSimulatorStore,
-  simulationFramesRef,
-} from "../store/simulatorStore";
-import { useShallow } from "zustand/shallow";
-
-// type SimConfig = {
-//   startPosition: { x: number; y: number; z: number };
-//   endPosition: { x: number; y: number; z: number };
-//   startRotation: { x: number; y: number; z: number };
-//   endRotation: { x: number; y: number; z: number };
-//   duration: number;
-// };
-
-const useSimConfig = () =>
-  useSimulatorStore(
-    useShallow((s) => ({
-      magnet: s.magnet,
-      sensor: s.sensor,
-      movement: s.animation,
-      startPosition: s.animation.startPosition,
-      endPosition: s.animation.endPosition,
-      startRotation: s.animation.startRotation,
-      endRotation: s.animation.endRotation,
-      duration: s.duration,
-    })),
-  );
+import { useSimulatorStore } from "../store/simulatorStore";
 
 export function useSimulation(): {
   simulate: () => Promise<void>;
+  simulating: boolean;
+  simulationError: string | null;
 } {
-  const cfg = useSimConfig();
-
-  const { setCurrentTime, setMode, setView, play } =
-    useSimulatorStore.getState();
+  const simulating = useSimulatorStore((s) => s.simulating);
+  const simulationError = useSimulatorStore((s) => s.simulationError);
 
   const simulate = async (): Promise<void> => {
-    const result = await runSimulation({
-      magnet: cfg.magnet,
-      sensor: cfg.sensor,
-      movement: {
-        type: "linear",
-        startPosition: cfg.startPosition,
-        endPosition: cfg.endPosition,
-        startRotation: cfg.startRotation,
-        endRotation: cfg.endRotation,
-      },
-      fps: 60,
-      duration: cfg.duration,
-    });
+    const store = useSimulatorStore.getState();
+    const { magnet, sensor, sensorPackageId, animation, duration, fps } = store;
 
-    simulationFramesRef.current = result.frames;
+    store.setSimulating(true);
+    store.setSimulationError(null);
 
-    useSimulatorStore.setState({
-      currentTime: 0,
-      mode: "playback",
-      view: "results",
-    });
-    setMode("playback");
-    setView("results");
-    play();
+    try {
+      const result = await runSimulation({
+        magnet,
+        sensor,
+        movement: animation,
+        fps,
+        duration,
+        sensorPackageId,
+      });
+
+      useSimulatorStore.getState().setSimulationResult(result);
+      useSimulatorStore.getState().play();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Simulation failed. Check that the backend is running.";
+      useSimulatorStore.getState().setSimulating(false);
+      useSimulatorStore.getState().setSimulationError(message);
+    }
   };
-  return { simulate };
+
+  return { simulate, simulating, simulationError };
 }

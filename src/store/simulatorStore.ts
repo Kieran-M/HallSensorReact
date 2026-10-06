@@ -1,135 +1,85 @@
 import { create } from "zustand";
+import { getPreset } from "../lib/presets";
+import { cancelSmoothSeek, syncPlaybackFrame } from "../lib/playbackClock";
+import type {
+  SensorPackageInfo,
+  SimulationFrame,
+  SimulationResult,
+} from "../types/simulation";
+import {
+  SHAPE_DEFAULTS,
+  type AxialCylinderMagnet,
+  type AxialRingMagnet,
+  type BarMagnet,
+  type BaseMagnetParams,
+  type DiametricCylinderMagnet,
+  type MagnetParams,
+  type MagnetShape,
+  type RingMagnet,
+  type SphereMagnet,
+} from "../types/magnet";
+import {
+  DEFAULT_HINGE,
+  DEFAULT_LINEAR,
+  DEFAULT_ROTATE,
+  defaultAnimationForType,
+  type AnimationParams,
+  type HingeMovement,
+  type LinearMovement,
+  type MotionAxis,
+  type MotionType,
+  type RotateMovement,
+  type SensorPosition,
+  type XYZ,
+} from "../types/motion";
+import { DEFAULT_CAMERA_VIEW, type CameraViewState } from "../types/camera";
 
-export interface BaseMagnetParams {
-  poles: number;
-  material: string;
-  materialGrade: string;
-  remanence: number;
-  temperature: number;
-  tempCoefficient: number;
-  coercivity: number;
-}
+export type { SensorPackageInfo, SimulationFrame, SimulationResult };
 
-export interface BarMagnet extends BaseMagnetParams {
-  shape: "bar";
-  length: number;
-  width: number;
-  height: number;
-}
-
-export interface AxialCylinderMagnet extends BaseMagnetParams {
-  shape: "axial_cylinder";
-  outerDiameter: number;
-  height: number;
-}
-
-export interface DiametricCylinderMagnet extends BaseMagnetParams {
-  shape: "diametric_cylinder";
-  outerDiameter: number;
-  height: number;
-}
-
-export interface RingMagnet extends BaseMagnetParams {
-  shape: "ring";
-  outerDiameter: number;
-  innerDiameter: number;
-  height: number;
-}
-
-export interface AxialRingMagnet extends BaseMagnetParams {
-  shape: "axial_ring";
-  outerDiameter: number;
-  innerDiameter: number;
-  height: number;
-}
-
-export interface SphereMagnet extends BaseMagnetParams {
-  shape: "sphere";
-  diameter: number;
-}
-
-export type MagnetParams =
-  | BarMagnet
-  | AxialCylinderMagnet
-  | DiametricCylinderMagnet
-  | RingMagnet
-  | AxialRingMagnet
-  | SphereMagnet;
-
-export type MagnetShape = MagnetParams["shape"];
-
-const BASE_DEFAULTS: BaseMagnetParams = {
-  poles: 2,
-  material: "NdFeB",
-  materialGrade: "N42",
-  remanence: 1.32,
-  temperature: 20,
-  tempCoefficient: -0.12,
-  coercivity: 995,
+// Re-exports keep existing `from "../store/simulatorStore"` imports working.
+export {
+  SHAPE_DEFAULTS,
+  DEFAULT_HINGE,
+  DEFAULT_LINEAR,
+  DEFAULT_ROTATE,
+  DEFAULT_CAMERA_VIEW,
+  defaultAnimationForType,
 };
-
-export const SHAPE_DEFAULTS: Record<MagnetShape, MagnetParams> = {
-  bar: { ...BASE_DEFAULTS, shape: "bar", length: 20, width: 10, height: 5 },
-  axial_cylinder: {
-    ...BASE_DEFAULTS,
-    shape: "axial_cylinder",
-    outerDiameter: 10,
-    height: 5,
-  },
-  diametric_cylinder: {
-    ...BASE_DEFAULTS,
-    shape: "diametric_cylinder",
-    outerDiameter: 10,
-    height: 5,
-  },
-  ring: {
-    ...BASE_DEFAULTS,
-    shape: "ring",
-    outerDiameter: 10,
-    innerDiameter: 5,
-    height: 5,
-  },
-  axial_ring: {
-    ...BASE_DEFAULTS,
-    shape: "axial_ring",
-    outerDiameter: 10,
-    innerDiameter: 5,
-    height: 5,
-  },
-  sphere: { ...BASE_DEFAULTS, shape: "sphere", diameter: 10 },
+export type {
+  AxialCylinderMagnet,
+  AxialRingMagnet,
+  BarMagnet,
+  BaseMagnetParams,
+  DiametricCylinderMagnet,
+  MagnetParams,
+  MagnetShape,
+  RingMagnet,
+  SphereMagnet,
+  AnimationParams,
+  HingeMovement,
+  LinearMovement,
+  MotionAxis,
+  MotionType,
+  RotateMovement,
+  SensorPosition,
+  XYZ,
+  CameraViewState,
 };
-
-export interface SensorPosition {
-  x: number;
-  y: number;
-  z: number;
-}
-
-export interface AnimationParams {
-  type: "linear"; //TODO add more types in the future
-  startPosition: { x: number; y: number; z: number };
-  endPosition: { x: number; y: number; z: number };
-
-  startRotation: { x: number; y: number; z: number };
-  endRotation: { x: number; y: number; z: number };
-}
-
-export interface SimulationFrame {
-  position: [number, number, number];
-  rotation: [number, number, number];
-
-  bx: number;
-  by: number;
-  bz: number;
-}
 
 export type SimulatorMode = "edit" | "playback";
 
 export type SimulatorView = "presets" | "design" | "results";
 
+export interface ActivePreset {
+  id: string;
+  label: string;
+}
+
 interface SimulatorStore {
   magnet: MagnetParams;
   animation: AnimationParams;
+  cameraView: CameraViewState;
+  setCameraView: (view: CameraViewState) => void;
   setMagnetShape: (shape: MagnetShape) => void;
   setMagnetParam: <K extends keyof MagnetParams>(
     key: K,
@@ -137,34 +87,48 @@ interface SimulatorStore {
   ) => void;
 
   sensor: SensorPosition;
+  sensorPackageId: string;
   setSensorPosition: (sensor: SensorPosition) => void;
+  setSensorPackageId: (id: string) => void;
 
-  setAnimationParam: <K extends keyof AnimationParams>(
-    key: K,
-    value: AnimationParams[K],
-  ) => void;
+  setAnimation: (animation: AnimationParams) => void;
+  setMotionType: (type: MotionType) => void;
+  /** Shallow-merge fields onto the active motion; callers must match the current type. */
+  patchAnimation: (patch: Partial<AnimationParams>) => void;
 
   resetMagnet: () => void;
 
-  playing: boolean;
-  currentTime: number;
-  duration: number;
+  activePreset: ActivePreset | null;
+  applyPreset: (presetId: string) => boolean;
 
+  playing: boolean;
+  /** Fractional frame index into simulation.frames (UI/charts; 3D uses playbackFrameRef). */
+  currentFrame: number;
+  /** Derived display time in seconds: currentFrame / fps. */
+  currentTime: number;
+  /** Wall-clock multiplier for playback (0.25–2). Does not change sim fps/duration. */
+  playbackSpeed: number;
+  duration: number;
+  fps: number;
+  simulation: SimulationResult | null;
+  simulating: boolean;
+  simulationError: string | null;
+
+  setCurrentFrame: (frame: number) => void;
+  /** @deprecated prefer setCurrentFrame — kept for scrubbers that speak in seconds */
   setCurrentTime: (time: number) => void;
+  setPlaybackSpeed: (speed: number) => void;
 
   setDuration: (duration: number) => void;
+  setSimulating: (simulating: boolean) => void;
+  setSimulationError: (error: string | null) => void;
+  setSimulationResult: (result: SimulationResult) => void;
   clearFrames: () => void;
 
   play: () => void;
   pause: () => void;
 
-  //setFrame: (frame: number) => void;
-
   mode: SimulatorMode;
-
-  //simulationFrames: SimulationFrame[];
-
-  //setSimulationFrames: (frames: SimulationFrame[]) => void;
 
   setMode: (mode: SimulatorMode) => void;
 
@@ -175,12 +139,9 @@ interface SimulatorStore {
 
 export const useSimulatorStore = create<SimulatorStore>((set) => ({
   magnet: SHAPE_DEFAULTS.axial_cylinder,
-  animation: {
-    startPosition: { x: 0, y: 0, z: 0 },
-    endPosition: { x: 0, y: 0, z: 0 },
-    startRotation: { x: 0, y: 0, z: 0 },
-    endRotation: { x: 0, y: 0, z: 0 },
-  },
+  animation: DEFAULT_LINEAR,
+  cameraView: DEFAULT_CAMERA_VIEW,
+  setCameraView: (cameraView) => set({ cameraView }),
   setMagnetShape: (shape) =>
     set((state) => ({
       magnet: {
@@ -198,8 +159,19 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
   setMagnetParam: (key, value) =>
     set((state) => ({ magnet: { ...state.magnet, [key]: value } })),
 
-  setAnimationParam: (key, value) =>
-    set((state) => ({ animation: { ...state.animation, [key]: value } })),
+  setAnimation: (animation) => set({ animation }),
+
+  setMotionType: (type) =>
+    set((state) => {
+      if (state.animation.type === type) return state;
+      return { animation: defaultAnimationForType(type), activePreset: null };
+    }),
+
+  patchAnimation: (patch) =>
+    set((state) => ({
+      animation: { ...state.animation, ...patch } as AnimationParams,
+      activePreset: null,
+    })),
 
   resetMagnet: () => set({ magnet: SHAPE_DEFAULTS.axial_cylinder }),
 
@@ -208,26 +180,117 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     y: 0,
     z: 0,
   },
+  sensorPackageId: "test",
 
-  setSensorPosition: (sensor) => set({ sensor }),
+  setSensorPosition: (sensor) => set({ sensor, activePreset: null }),
+  setSensorPackageId: (sensorPackageId) => set({ sensorPackageId }),
+
+  activePreset: null,
+
+  applyPreset: (presetId) => {
+    const preset = getPreset(presetId);
+    if (!preset) return false;
+    set({
+      magnet: preset.magnet,
+      sensor: preset.sensor,
+      animation: preset.animation,
+      duration: preset.duration,
+      fps: preset.fps,
+      sensorPackageId: preset.sensorPackageId,
+      activePreset: { id: preset.meta.id, label: preset.meta.label },
+      mode: "edit",
+      playing: false,
+      currentFrame: 0,
+      currentTime: 0,
+      simulation: null,
+      simulationError: null,
+      view: "design",
+    });
+    simulationFramesRef.current = [];
+    syncPlaybackFrame(0);
+    return true;
+  },
 
   playing: false,
 
+  currentFrame: 0,
   currentTime: 0,
+  playbackSpeed: 1,
   duration: 5,
+  fps: 60,
+  simulation: null,
+  simulating: false,
+  simulationError: null,
 
-  play: () => set({ playing: true }),
+  play: () => {
+    cancelSmoothSeek();
+    set({ playing: true });
+  },
 
   pause: () => set({ playing: false }),
 
-  setCurrentTime: (currentTime) => set({ currentTime }),
+  setCurrentFrame: (frame) =>
+    set((state) => {
+      cancelSmoothSeek();
+      const fps = state.fps > 0 ? state.fps : 60;
+      const last =
+        (state.simulation?.frames.length ?? 1) > 0
+          ? Math.max((state.simulation?.frames.length ?? 1) - 1, 0)
+          : Math.max(Math.round(state.duration * fps) - 1, 0);
+      const clamped = Math.min(Math.max(frame, 0), last);
+      syncPlaybackFrame(clamped);
+      return {
+        currentFrame: clamped,
+        currentTime: clamped / fps,
+      };
+    }),
+
+  setCurrentTime: (currentTime) =>
+    set((state) => {
+      const fps = state.fps > 0 ? state.fps : 60;
+      const frame = currentTime * fps;
+      const last =
+        (state.simulation?.frames.length ?? 1) > 0
+          ? Math.max((state.simulation?.frames.length ?? 1) - 1, 0)
+          : Math.max(Math.round(state.duration * fps) - 1, 0);
+      const clamped = Math.min(Math.max(frame, 0), last);
+      syncPlaybackFrame(clamped);
+      return {
+        currentFrame: clamped,
+        currentTime: clamped / fps,
+      };
+    }),
+
+  setPlaybackSpeed: (playbackSpeed) =>
+    set({
+      playbackSpeed: Math.min(Math.max(playbackSpeed, 0.1), 4),
+    }),
 
   setDuration: (duration) => set({ duration }),
 
   mode: "edit",
 
+  setSimulating: (simulating) => set({ simulating }),
+  setSimulationError: (simulationError) => set({ simulationError }),
+  setSimulationResult: (result) => {
+    simulationFramesRef.current = result.frames;
+    syncPlaybackFrame(0);
+    set({
+      simulation: result,
+      fps: result.fps,
+      duration: result.duration,
+      currentFrame: 0,
+      currentTime: 0,
+      mode: "playback",
+      view: "results",
+      simulating: false,
+      simulationError: null,
+    });
+  },
   clearFrames: () => {
     simulationFramesRef.current = [];
+    syncPlaybackFrame(0);
+    set({ simulation: null, currentFrame: 0, currentTime: 0 });
   },
 
   setMode: (mode) => set({ mode }),
@@ -239,4 +302,9 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
   },
 }));
 
+/**
+ * Mirror of `simulation.frames` for useFrame without subscribing every mesh
+ * to the store. Always update this together with `setSimulationResult` /
+ * `clearFrames` / `applyPreset`.
+ */
 export const simulationFramesRef = { current: [] as SimulationFrame[] };

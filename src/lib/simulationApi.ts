@@ -1,11 +1,12 @@
-import type { AnimationParams, MagnetParams, SensorPosition } from "../store/simulatorStore";
-import type { SimulationResult } from "../types/simulation";
-
-export interface XYZ {
-  x: number;
-  y: number;
-  z: number;
-}
+import type {
+  AnimationParams,
+  MagnetParams,
+  SensorPosition,
+} from "../store/simulatorStore";
+import {
+  parseSimulationResult,
+  type SimulationResult,
+} from "../types/simulation";
 
 export interface SimulationRequest {
   magnet: MagnetParams;
@@ -13,40 +14,39 @@ export interface SimulationRequest {
   movement: AnimationParams;
   fps: number;
   duration: number;
+  sensorPackageId: string;
+}
+
+function apiBaseUrl(): string {
+  return (import.meta.env.VITE_SIMULATION_API_URL ?? "http://localhost:8000").replace(
+    /\/+$/,
+    "",
+  );
 }
 
 export async function runSimulation(
-  request: SimulationRequest
+  request: SimulationRequest,
 ): Promise<SimulationResult> {
-  const apiUrl = (
-    import.meta.env.VITE_SIMULATION_API_URL ?? "http://localhost:8000"
-  ).replace(/\/+$/, "");
-  const response = await fetch(
-    `${apiUrl}/simulate`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(request),
-    }
-  );
+  const response = await fetch(`${apiBaseUrl()}/simulate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    let detail = await response.text();
+    try {
+      const parsed = JSON.parse(detail) as { detail?: unknown };
+      if (typeof parsed.detail === "string") detail = parsed.detail;
+    } catch {
+      // keep raw text
+    }
     throw new Error(
-      `Simulation failed: ${errorText}`
+      detail.trim()
+        ? `Simulation failed (${response.status}): ${detail}`
+        : `Simulation failed (${response.status}).`,
     );
   }
 
-  const result: unknown = await response.json();
-  if (
-    typeof result !== "object" ||
-    result === null ||
-    !Array.isArray((result as { frames?: unknown }).frames)
-  ) {
-    throw new Error("Simulation returned an invalid response.");
-  }
-
-  return result as SimulationResult;
+  return parseSimulationResult(await response.json());
 }

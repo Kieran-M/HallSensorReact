@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import type { SimulationFrame } from "../types/simulation";
 
 export interface FieldSample {
   t: number;
@@ -7,53 +7,28 @@ export interface FieldSample {
   bz: number;
   btotal: number;
   vout: number;
+  code: number;
 }
 
-export function computeFieldAt(
-  mx: number,
-  my: number,
-  mz: number,
-  peakField: number
-): { bx: number; by: number; bz: number; btotal: number; vout: number } {
-  const dist = Math.sqrt(mx * mx + my * my + mz * mz);
-  const safeDist = Math.max(dist, 0.05);
-  const scale = peakField / Math.pow(safeDist + 0.3, 2);
+const TESLA_TO_MT = 1000;
 
-  const nx = mx / safeDist;
-  const ny = my / safeDist;
-  const nz = mz / safeDist;
-
-  const bx = scale * nx;
-  const by = -scale * ny;
-  const bz = scale * nz * 0.6;
-
-  const btotal = Math.sqrt(bx * bx + by * by + bz * bz);
-  const vout = Math.max(0, Math.min(3.3, 1.65 + by * 0.015));
-
-  return { bx, by, bz, btotal, vout };
-}
-
-export function buildDataset(
-  startPos: { x: number; y: number; z: number },
-  endPos: { x: number; y: number; z: number },
-  peakField: number,
-  duration: number,
-  steps = 120
+export function framesToDataset(
+  frames: SimulationFrame[],
+  fps: number
 ): FieldSample[] {
-  return Array.from({ length: steps + 1 }, (_, i) => {
-    const t = i / steps;
-    const mx = THREE.MathUtils.lerp(startPos.x, endPos.x, t);
-    const my = THREE.MathUtils.lerp(startPos.y, endPos.y, t);
-    const mz = THREE.MathUtils.lerp(startPos.z, endPos.z, t);
-    const { bx, by, bz, btotal, vout } = computeFieldAt(mx, my, mz, peakField);
+  if (frames.length === 0) return [];
 
-    return {
-      t: parseFloat((t * duration).toFixed(2)),
-      bx: parseFloat(bx.toFixed(1)),
-      by: parseFloat(by.toFixed(1)),
-      bz: parseFloat(bz.toFixed(1)),
-      btotal: parseFloat(btotal.toFixed(1)),
-      vout: parseFloat(vout.toFixed(3)),
-    };
-  });
+  const safeFps = fps > 0 ? fps : 60;
+  const last = frames.length - 1;
+
+  return frames.map((frame, i) => ({
+    // Match backend sampling: t = i / fps across duration ≈ (n-1)/fps.
+    t: parseFloat((last === 0 ? 0 : i / safeFps).toFixed(4)),
+    bx: parseFloat((frame.bx * TESLA_TO_MT).toFixed(3)),
+    by: parseFloat((frame.by * TESLA_TO_MT).toFixed(3)),
+    bz: parseFloat((frame.bz * TESLA_TO_MT).toFixed(3)),
+    btotal: parseFloat((frame.magnitude * TESLA_TO_MT).toFixed(3)),
+    vout: parseFloat(frame.output_voltage.toFixed(4)),
+    code: frame.output_code,
+  }));
 }

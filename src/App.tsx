@@ -1,6 +1,5 @@
 import { useSimulatorStore } from "./store/simulatorStore";
 import { DesignPage } from "./pages/DesignPage";
-import { ResultsPage } from "./pages/ResultsPage";
 import SelectionView from "./components/simulator/scene/SelectionView";
 import { ThemeProvider } from "./components/ui/Theme";
 
@@ -11,13 +10,9 @@ export default function App() {
     <ThemeProvider>
       {view === "presets" ? (
         <SelectionView />
-      ) : view === "design" ? (
-        <DesignPage />
       ) : (
-        <ResultsPage />
-      )
-      }
-      {/* <SelectionView/> */}
+        <DesignPage />
+      )}
     </ThemeProvider>
   );
 }
