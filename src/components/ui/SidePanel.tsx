@@ -7,6 +7,7 @@ import { NumberInput } from './inputs/NumberInput'
 import { SelectInput } from './inputs/SelectInput'
 import { GeometryFields } from './panel/GeometryFields'
 import { MotionFields } from './panel/MotionFields'
+import { SensorPackageFields } from './panel/SensorPackageFields'
 import { GRADES, MATERIALS, SHAPES } from './panel/options'
 import { XYZGroup } from './panel/XYZGroup'
 
@@ -26,7 +27,7 @@ export function SidePanel() {
   const [open, setOpen] = useState<Record<string, boolean>>({
     spec: true,
     geometry: true,
-    sensor: false,
+    sensor: true,
     motion: true,
   })
 
@@ -104,6 +105,7 @@ export function SidePanel() {
           open={open.sensor}
           onToggle={() => toggle('sensor')}
         >
+          <SensorPackageFields />
           <XYZGroup
             label="Position"
             xVal={sensor.x}

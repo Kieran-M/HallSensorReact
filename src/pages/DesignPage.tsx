@@ -66,9 +66,13 @@ export function DesignPage() {
   const dataset = useMemo(
     () =>
       simulation
-        ? framesToDataset(simulation.frames, simulation.fps || fps)
+        ? framesToDataset(
+            simulation.frames,
+            simulation.fps || fps,
+            animationType,
+          )
         : [],
-    [simulation, fps],
+    [simulation, fps, animationType],
   );
 
   const handleBack = () => {

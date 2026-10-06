@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useSimulatorStore } from "../../store/simulatorStore";
 import { useShallow } from "zustand/shallow";
 import type { FieldSample } from "../../lib/fieldMath";
-import { startSmoothSeek } from "../../lib/playbackClock";
+import { startSmoothSeek } from "../../lib/playbackCursor";
 
 const SPEED_OPTIONS = [0.25, 0.5, 1, 1.5, 2] as const;
 
@@ -104,10 +104,10 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
             Live Output
           </div>
           {[
-            { label: "Bx", value: `${liveRow.bx} mT`, color: "#f87171" },
-            { label: "By", value: `${liveRow.by} mT`, color: "var(--accent)" },
-            { label: "Bz", value: `${liveRow.bz} mT`, color: "#a78bfa" },
-            { label: "|B|", value: `${liveRow.btotal} mT`, color: "#34d399" },
+            { label: "Bx", value: `${liveRow.bx} G`, color: "#f87171" },
+            { label: "By", value: `${liveRow.by} G`, color: "var(--accent)" },
+            { label: "Bz", value: `${liveRow.bz} G`, color: "#a78bfa" },
+            { label: "|B|", value: `${liveRow.btotal} G`, color: "#34d399" },
             { label: "Vout", value: `${liveRow.vout} V`, color: "#fbbf24" },
             { label: "Code", value: `${liveRow.code}`, color: "#94a3b8" },
           ].map((r) => (

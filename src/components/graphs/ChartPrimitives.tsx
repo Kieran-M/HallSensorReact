@@ -5,12 +5,24 @@ export function ChartTooltip({
   active,
   payload,
   label,
+  xUnit = "mm",
 }: {
   active?: boolean;
-  payload?: Array<{ name?: string; value?: number; color?: string; dataKey?: string }>;
+  payload?: Array<{
+    name?: string;
+    value?: number;
+    color?: string;
+    dataKey?: string;
+  }>;
   label?: number | string;
+  xUnit?: string;
 }) {
   if (!active || !payload?.length) return null;
+
+  const xVal =
+    typeof label === "number"
+      ? label.toFixed(xUnit === "deg" ? 1 : 2)
+      : label;
 
   return (
     <div
@@ -25,7 +37,7 @@ export function ChartTooltip({
         className="font-mono text-[13px] uppercase tracking-widest mb-1.5"
         style={{ color: "var(--accent)" }}
       >
-        t = {typeof label === "number" ? label.toFixed(3) : label} s
+        {xVal} {xUnit}
       </div>
       <div className="space-y-1">
         {payload.map((entry) => {
@@ -36,7 +48,7 @@ export function ChartTooltip({
             typeof entry.value === "number"
               ? key === "code"
                 ? String(Math.round(entry.value))
-                : entry.value.toFixed(key === "vout" ? 4 : 3)
+                : entry.value.toFixed(key === "vout" ? 4 : 2)
               : "—";
           return (
             <div

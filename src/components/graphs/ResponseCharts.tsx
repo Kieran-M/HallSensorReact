@@ -8,25 +8,28 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import type { FieldSample } from "../../lib/fieldMath";
+import type { ChartXMode, FieldSample } from "../../lib/fieldMath";
+import { chartXLabel, chartXUnit } from "../../lib/fieldMath";
 import { GraphCard, SeriesToggle } from "./ChartPrimitives";
 import {
   CHART_MARGIN,
   SERIES_META,
-  TIME_X_AXIS_PROPS,
   VALUE_Y_AXIS_PROPS,
+  motionXAxisProps,
   type SeriesKey,
 } from "./seriesMeta";
 
 interface ResponseChartsProps {
   dataset: FieldSample[];
+  xMode: ChartXMode;
   visible: Record<SeriesKey, boolean>;
   onToggle: (key: SeriesKey) => void;
   sharedTooltip: ReactNode;
   playhead: ReactNode;
   partNumber?: string;
   supply: number;
-  vref: number;
+  vref: number | null;
+  digital?: boolean;
   summary: {
     peakB: number;
     minB: number;
@@ -36,9 +39,10 @@ interface ResponseChartsProps {
   showSummary: boolean;
 }
 
-/** Field / magnitude / output chart cards for the results panel. */
+/** Field + device-output charts per SRS §10. */
 export function ResponseCharts({
   dataset,
+  xMode,
   visible,
   onToggle,
   sharedTooltip,
@@ -46,14 +50,18 @@ export function ResponseCharts({
   partNumber,
   supply,
   vref,
+  digital = false,
   summary,
   showSummary,
 }: ResponseChartsProps) {
+  const xAxis = motionXAxisProps(chartXUnit(xMode));
+  const xTitle = chartXLabel(xMode);
+
   return (
     <>
       <GraphCard
-        title="Magnetic Field Components"
-        subtitle="Hover for values · click keys to toggle"
+        title="Magnetic Field Density"
+        subtitle={`vs ${xTitle} · Flux density (G)`}
         toggles={
           <>
             <SeriesToggle
@@ -71,14 +79,19 @@ export function ResponseCharts({
               active={visible.bz}
               onToggle={() => onToggle("bz")}
             />
+            <SeriesToggle
+              seriesKey="btotal"
+              active={visible.btotal}
+              onToggle={() => onToggle("btotal")}
+            />
           </>
         }
       >
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={220}>
           <LineChart data={dataset} syncId="hallsim" margin={CHART_MARGIN}>
             <CartesianGrid strokeDasharray="2 4" stroke="var(--chart-grid)" />
-            <XAxis {...TIME_X_AXIS_PROPS} />
-            <YAxis {...VALUE_Y_AXIS_PROPS} width={44} unit=" mT" />
+            <XAxis {...xAxis} />
+            <YAxis {...VALUE_Y_AXIS_PROPS} width={48} unit=" G" />
             {sharedTooltip}
             {playhead}
             {visible.bx && (
@@ -117,28 +130,6 @@ export function ResponseCharts({
                 isAnimationActive={false}
               />
             )}
-          </LineChart>
-        </ResponsiveContainer>
-      </GraphCard>
-
-      <GraphCard
-        title="Total Field Magnitude"
-        subtitle="|B|  [mT]"
-        toggles={
-          <SeriesToggle
-            seriesKey="btotal"
-            active={visible.btotal}
-            onToggle={() => onToggle("btotal")}
-          />
-        }
-      >
-        <ResponsiveContainer width="100%" height={170}>
-          <LineChart data={dataset} syncId="hallsim" margin={CHART_MARGIN}>
-            <CartesianGrid strokeDasharray="2 4" stroke="var(--chart-grid)" />
-            <XAxis {...TIME_X_AXIS_PROPS} />
-            <YAxis {...VALUE_Y_AXIS_PROPS} width={44} unit=" mT" />
-            {sharedTooltip}
-            {playhead}
             {visible.btotal && (
               <Line
                 type="monotone"
@@ -156,8 +147,8 @@ export function ResponseCharts({
       </GraphCard>
 
       <GraphCard
-        title="Sensor Output"
-        subtitle={`${partNumber ?? "sensor"} · ${supply} V supply`}
+        title="Device Output"
+        subtitle={`vs ${xTitle} · ${partNumber ?? "sensor"} · ${supply} V${digital ? " · digital" : ""}`}
         toggles={
           <>
             <SeriesToggle
@@ -173,15 +164,15 @@ export function ResponseCharts({
           </>
         }
       >
-        <ResponsiveContainer width="100%" height={180}>
+        <ResponsiveContainer width="100%" height={200}>
           <LineChart data={dataset} syncId="hallsim" margin={CHART_MARGIN}>
             <CartesianGrid strokeDasharray="2 4" stroke="var(--chart-grid)" />
-            <XAxis {...TIME_X_AXIS_PROPS} />
+            <XAxis {...xAxis} />
             <YAxis
               yAxisId="v"
               domain={[0, supply]}
               {...VALUE_Y_AXIS_PROPS}
-              width={40}
+              width={44}
               unit=" V"
             />
             {visible.code && (
@@ -194,16 +185,18 @@ export function ResponseCharts({
             )}
             {sharedTooltip}
             {playhead}
-            <ReferenceLine
-              yAxisId="v"
-              y={vref}
-              stroke="var(--border)"
-              strokeDasharray="4 4"
-            />
+            {vref != null && (
+              <ReferenceLine
+                yAxisId="v"
+                y={vref}
+                stroke="var(--border)"
+                strokeDasharray="4 4"
+              />
+            )}
             {visible.vout && (
               <Line
                 yAxisId="v"
-                type="monotone"
+                type={digital ? "stepAfter" : "monotone"}
                 dataKey="vout"
                 stroke={SERIES_META.vout.color}
                 strokeWidth={2.5}
@@ -246,8 +239,8 @@ export function ResponseCharts({
           </div>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Peak |B|", value: `${summary.peakB.toFixed(1)} mT` },
-              { label: "Min |B|", value: `${summary.minB.toFixed(1)} mT` },
+              { label: "Peak |B|", value: `${summary.peakB.toFixed(1)} G` },
+              { label: "Min |B|", value: `${summary.minB.toFixed(1)} G` },
               { label: "Vout max", value: `${summary.vmax.toFixed(3)} V` },
               { label: "Vout min", value: `${summary.vmin.toFixed(3)} V` },
             ].map((s) => (

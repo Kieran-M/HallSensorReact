@@ -32,10 +32,18 @@ interface DesignViewProps {
 export function DesignView({ active = true }: DesignViewProps) {
   const magnet = useSimulatorStore((s) => s.magnet);
   const sensor = useSimulatorStore((s) => s.sensor);
+  const sensorPackageId = useSimulatorStore((s) => s.sensorPackageId);
+  const sensorCatalog = useSimulatorStore((s) => s.sensorCatalog);
+  const simulationPackage = useSimulatorStore((s) => s.simulation?.sensorPackage);
   const cameraView = useSimulatorStore((s) => s.cameraView);
   const isResults = useSimulatorStore((s) => s.view === "results");
   const simulating = useSimulatorStore((s) => s.simulating);
   const { theme } = useTheme();
+
+  const activePackage =
+    simulationPackage ??
+    sensorCatalog.find((p) => p.id === sensorPackageId) ??
+    null;
 
   const { canvasBg, gridCell, gridSection } = useMemo(
     () => ({
@@ -77,6 +85,8 @@ export function DesignView({ active = true }: DesignViewProps) {
               mmToWorld(sensor.y),
               mmToWorld(sensor.z),
             ]}
+            outline={activePackage?.packageOutline ?? "sot23"}
+            hallType={activePackage?.hallType ?? "linear"}
           />
 
           <Grid

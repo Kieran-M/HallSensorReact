@@ -23,7 +23,7 @@ If `npm ci` fails because the lockfile was regenerated locally, use `npm install
 
 ```bash
 npm run dev       # Vite at http://localhost:5173
-npm run build     # production bundle -> dist/
+npm run build     # production ESM chunks -> dist/
 npm run preview   # serve dist/
 npm run lint      # ESLint
 ```
@@ -33,6 +33,29 @@ Typecheck (project references):
 ```bash
 npx tsc --noEmit -p tsconfig.app.json
 ```
+
+## Host-site embed (ESM)
+
+HallSim is built as **portable ESM** (`base: './'`) and does **not** use the browser History API or a URL router. In-app screens (presets / design / results) are Zustand view state only, so the parent diodes.com page keeps ownership of navigation.
+
+After `npm run build`:
+
+- Standalone: open `dist/index.html` (or host the `dist/` folder)
+- Embed API: import the generated `dist/assets/embed-*.js` entry:
+
+```js
+import { mountHallSim } from "./assets/embed-XXXXXXXX.js";
+
+const host = document.getElementById("hallsim-root");
+const { unmount } = mountHallSim(host);
+
+// when leaving the page / tearing down the widget:
+// unmount();
+```
+
+Serve `dist/` (including hashed `assets/*` chunks) from the same origin/path prefix the embed script uses, so relative chunk imports resolve.
+
+Heavy 3D / chart code is code-split and only fetched when the user enters the design workspace (or custom setup). Hovering “Open Design” / “Start custom setup” prefetches those chunks.
 
 ## Environment
 

@@ -96,6 +96,19 @@
   text-align: left;
 }
 
+/* Landing preset grid: skip offscreen layout/paint work (helps mobile LCP). */
+.preset-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preset-card svg animate,
+  .preset-card svg animateTransform {
+    display: none;
+  }
+}
+
 /* Scale UI on wide / ultrawide */
 @media (min-width: 1536px) {
   :root {

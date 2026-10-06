@@ -1,9 +1,16 @@
 import { useMemo, useState, type FC } from "react";
 import { Tooltip, ReferenceLine } from "recharts";
 import { useSimulatorStore } from "../../store/simulatorStore";
-import type { SensorPackageInfo } from "../../types/simulation";
+import {
+  isDigitalHall,
+  type SensorPackageInfo,
+} from "../../types/simulation";
 import { useShallow } from "zustand/shallow";
-import type { FieldSample } from "../../lib/fieldMath";
+import {
+  chartXModeForMotion,
+  chartXUnit,
+  type FieldSample,
+} from "../../lib/fieldMath";
 import { ChartTooltip } from "./ChartPrimitives";
 import { ResponseCharts } from "./ResponseCharts";
 import type { SeriesKey } from "./seriesMeta";
@@ -14,16 +21,21 @@ interface GraphPanelProps {
 }
 
 export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
-  const { playing, currentFrame, currentTime, frameCount } = useSimulatorStore(
-    useShallow((s) => ({
-      playing: s.playing,
-      currentFrame: s.currentFrame,
-      currentTime: s.currentTime,
-      frameCount: s.simulation?.frames.length ?? 0,
-    })),
-  );
+  const { playing, currentFrame, currentTime, frameCount, motionType } =
+    useSimulatorStore(
+      useShallow((s) => ({
+        playing: s.playing,
+        currentFrame: s.currentFrame,
+        currentTime: s.currentTime,
+        frameCount: s.simulation?.frames.length ?? 0,
+        motionType: s.animation.type,
+      })),
+    );
 
   const { setCurrentFrame, pause } = useSimulatorStore.getState();
+  const digital = isDigitalHall(sensorPackage);
+  const xMode = chartXModeForMotion(motionType);
+  const xUnit = chartXUnit(xMode);
 
   const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({
     bx: true,
@@ -31,17 +43,19 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
     bz: true,
     btotal: true,
     vout: true,
-    code: false,
+    code: digital,
   });
 
   const lastFrame = Math.max(frameCount - 1, 0);
   const done = !playing && currentFrame >= lastFrame && dataset.length > 0;
   const supply = sensorPackage?.supply ?? 5;
-  const vref = sensorPackage?.vref ?? supply / 2;
-  const playheadT = dataset.length
-    ? (dataset[Math.min(Math.round(currentFrame), dataset.length - 1)]?.t ??
-      currentTime)
-    : currentTime;
+  const vref = sensorPackage?.vref ?? (digital ? null : supply / 2);
+
+  const liveIdx = dataset.length
+    ? Math.min(Math.round(currentFrame), dataset.length - 1)
+    : 0;
+  const liveRow = dataset[liveIdx];
+  const playheadX = liveRow?.x ?? 0;
 
   const summary = useMemo(() => {
     if (dataset.length === 0) return null;
@@ -63,7 +77,7 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
 
   const sharedTooltip = (
     <Tooltip
-      content={<ChartTooltip />}
+      content={<ChartTooltip xUnit={xUnit} />}
       cursor={{
         stroke: "var(--accent)",
         strokeWidth: 1,
@@ -78,7 +92,7 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
   const playhead =
     dataset.length > 0 ? (
       <ReferenceLine
-        x={playheadT}
+        x={playheadX}
         stroke="var(--accent)"
         strokeWidth={1.5}
         strokeDasharray="2 3"
@@ -108,6 +122,17 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
           >
             Sensor Response
           </div>
+          {sensorPackage && (
+            <div
+              className="font-mono text-xs mt-1"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              {sensorPackage.partNumber} · {sensorPackage.hallType}
+              {digital &&
+                sensorPackage.bopTypGauss != null &&
+                ` · Bop ${sensorPackage.bopTypGauss} G`}
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -116,7 +141,7 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
               className="font-mono text-xs uppercase tracking-widest"
               style={{ color: "var(--muted-foreground)" }}
             >
-              Time runner
+              Position runner
             </span>
             <span
               className="font-mono text-[13px]"
@@ -125,7 +150,10 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
               fr {Math.round(currentFrame)} / {lastFrame}
               <span style={{ color: "var(--muted-foreground)" }}>
                 {" "}
-                · {playheadT.toFixed(3)} s
+                ·{" "}
+                {liveRow
+                  ? `${playheadX.toFixed(xUnit === "deg" ? 1 : 2)} ${xUnit}`
+                  : `${currentTime.toFixed(3)} s`}
               </span>
             </span>
           </div>
@@ -138,14 +166,14 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
             disabled={dataset.length === 0}
             onChange={(e) => seek(Number(e.target.value))}
             className="hs-scrubber"
-            aria-label="Scrub simulation time"
+            aria-label="Scrub simulation position"
           />
           <p
             className="font-mono text-xs leading-relaxed"
             style={{ color: "var(--muted-foreground)" }}
           >
-            Drag to seek · hover charts for values · click legend keys to
-            show/hide
+            Drag to seek · charts use {xUnit === "deg" ? "angle" : "displacement"}{" "}
+            (SRS) · toggle series keys to show/hide
           </p>
         </div>
       </div>
@@ -153,6 +181,7 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
       <div className="p-4 space-y-4 overflow-y-auto flex-1 min-h-0">
         <ResponseCharts
           dataset={dataset}
+          xMode={xMode}
           visible={visible}
           onToggle={toggle}
           sharedTooltip={sharedTooltip}
@@ -160,6 +189,7 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
           partNumber={sensorPackage?.partNumber}
           supply={supply}
           vref={vref}
+          digital={digital}
           summary={summary}
           showSummary={done}
         />

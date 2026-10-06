@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getPreset } from "../lib/presets";
-import { cancelSmoothSeek, syncPlaybackFrame } from "../lib/playbackClock";
+import { cancelSmoothSeek, syncPlaybackFrame } from "../lib/playbackCursor";
 import type {
   SensorPackageInfo,
   SimulationFrame,
@@ -88,8 +88,10 @@ interface SimulatorStore {
 
   sensor: SensorPosition;
   sensorPackageId: string;
+  sensorCatalog: SensorPackageInfo[];
   setSensorPosition: (sensor: SensorPosition) => void;
   setSensorPackageId: (id: string) => void;
+  setSensorCatalog: (packages: SensorPackageInfo[]) => void;
 
   setAnimation: (animation: AnimationParams) => void;
   setMotionType: (type: MotionType) => void;
@@ -100,6 +102,11 @@ interface SimulatorStore {
 
   activePreset: ActivePreset | null;
   applyPreset: (presetId: string) => boolean;
+  applyCustomSetup: (setup: {
+    motionType: MotionType;
+    magnetShape: MagnetShape;
+    sensorPackageId: string;
+  }) => void;
 
   playing: boolean;
   /** Fractional frame index into simulation.frames (UI/charts; 3D uses playbackFrameRef). */
@@ -181,9 +188,11 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     z: 0,
   },
   sensorPackageId: "test",
+  sensorCatalog: [],
 
   setSensorPosition: (sensor) => set({ sensor, activePreset: null }),
   setSensorPackageId: (sensorPackageId) => set({ sensorPackageId }),
+  setSensorCatalog: (sensorCatalog) => set({ sensorCatalog }),
 
   activePreset: null,
 
@@ -209,6 +218,27 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     simulationFramesRef.current = [];
     syncPlaybackFrame(0);
     return true;
+  },
+
+  applyCustomSetup: ({ motionType, magnetShape, sensorPackageId }) => {
+    set({
+      magnet: SHAPE_DEFAULTS[magnetShape],
+      sensor: { x: 0, y: 0, z: 0 },
+      animation: defaultAnimationForType(motionType),
+      duration: 3,
+      fps: 60,
+      sensorPackageId,
+      activePreset: { id: "custom", label: "Custom Setup" },
+      mode: "edit",
+      playing: false,
+      currentFrame: 0,
+      currentTime: 0,
+      simulation: null,
+      simulationError: null,
+      view: "design",
+    });
+    simulationFramesRef.current = [];
+    syncPlaybackFrame(0);
   },
 
   playing: false,

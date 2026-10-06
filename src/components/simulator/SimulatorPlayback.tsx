@@ -6,7 +6,7 @@ import {
   seekTweenRef,
   syncPlaybackFrame,
   tickSmoothSeek,
-} from "../../lib/playbackClock";
+} from "../../lib/playbackCursor";
 
 /** How often charts / HUD pull from the high-frequency clock (ms). */
 const UI_SYNC_MS = 80;

@@ -124,7 +124,8 @@ export const PRESETS: Record<string, PresetSetup> = {
     },
     duration: 2.5,
     fps: 60,
-    sensorPackageId: "test",
+    // Demo digital unipolar switch (Diodes AH1381)
+    sensorPackageId: "ah1381",
   },
 
   /**
