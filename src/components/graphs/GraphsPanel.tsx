@@ -1,8 +1,9 @@
-import { useMemo, useState, type FC } from "react";
+import { useEffect, useMemo, useState, type FC } from "react";
 import { Tooltip, ReferenceLine } from "recharts";
 import { useSimulatorStore } from "../../store/simulatorStore";
 import {
   isDigitalHall,
+  type SensingAxis,
   type SensorPackageInfo,
 } from "../../types/simulation";
 import { useShallow } from "zustand/shallow";
@@ -20,6 +21,20 @@ interface GraphPanelProps {
   sensorPackage?: SensorPackageInfo;
 }
 
+function defaultVisibility(
+  axis: SensingAxis,
+  digital: boolean,
+): Record<SeriesKey, boolean> {
+  return {
+    bx: axis === "x",
+    by: axis === "y",
+    bz: axis === "z",
+    btotal: true,
+    vout: true,
+    code: digital,
+  };
+}
+
 export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
   const { playing, currentFrame, currentTime, frameCount, motionType } =
     useSimulatorStore(
@@ -34,17 +49,18 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
 
   const { setCurrentFrame, pause } = useSimulatorStore.getState();
   const digital = isDigitalHall(sensorPackage);
+  const sensingAxis: SensingAxis = sensorPackage?.sensingAxis ?? "z";
   const xMode = chartXModeForMotion(motionType);
   const xUnit = chartXUnit(xMode);
 
-  const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({
-    bx: true,
-    by: true,
-    bz: true,
-    btotal: true,
-    vout: true,
-    code: digital,
-  });
+  const [visible, setVisible] = useState<Record<SeriesKey, boolean>>(() =>
+    defaultVisibility(sensingAxis, digital),
+  );
+
+  // When package type/axis changes, re-focus Chart 2 on the sensing axis.
+  useEffect(() => {
+    setVisible(defaultVisibility(sensingAxis, digital));
+  }, [sensingAxis, digital, sensorPackage?.id]);
 
   const lastFrame = Math.max(frameCount - 1, 0);
   const done = !playing && currentFrame >= lastFrame && dataset.length > 0;
@@ -131,6 +147,7 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
               {digital &&
                 sensorPackage.bopTypGauss != null &&
                 ` · Bop ${sensorPackage.bopTypGauss} G`}
+              {!digital && ` · sense ${sensingAxis.toUpperCase()}`}
             </div>
           )}
         </div>
@@ -173,7 +190,7 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
             style={{ color: "var(--muted-foreground)" }}
           >
             Drag to seek · charts use {xUnit === "deg" ? "angle" : "displacement"}{" "}
-            (SRS) · toggle series keys to show/hide
+            · field defaults to sense axis {sensingAxis.toUpperCase()}
           </p>
         </div>
       </div>
@@ -190,6 +207,9 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
           supply={supply}
           vref={vref}
           digital={digital}
+          bopGauss={digital ? (sensorPackage?.bopTypGauss ?? null) : null}
+          brpGauss={digital ? (sensorPackage?.brpTypGauss ?? null) : null}
+          sensingAxis={sensingAxis}
           summary={summary}
           showSummary={done}
         />

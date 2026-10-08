@@ -60,33 +60,71 @@ export function MotionPreview({ type }: { type: MotionType }) {
   }
 
   if (type === "rotate") {
+    const cx = 80;
+    const cy = 28;
+    const r = 16;
     return (
       <svg viewBox="0 0 160 72" className="w-full h-16" aria-hidden>
         <rect x="66" y="56" width="28" height="8" rx="1" fill="#1a3a2a" />
         <rect x="74" y="51" width="12" height="6" rx="0.5" fill="#111" />
         <circle cx="80" cy="49" r="2" fill="var(--accent)" opacity="0.9" />
-        <ellipse
-          cx="80"
-          cy="30"
-          rx="28"
-          ry="8"
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r + 4}
           fill="none"
           stroke="var(--accent)"
-          strokeWidth="0.6"
-          strokeDasharray="3 3"
-          opacity="0.35"
+          strokeWidth="0.55"
+          strokeDasharray="2.5 2.5"
+          opacity="0.3"
         />
         <g>
           <animateTransform
             attributeName="transform"
             type="rotate"
-            from="0 80 30"
-            to="360 80 30"
+            from={`0 ${cx} ${cy}`}
+            to={`360 ${cx} ${cy}`}
             dur="2.4s"
             repeatCount="indefinite"
           />
-          <ellipse cx="80" cy="30" rx="18" ry="6" fill="#c0392b" />
-          <ellipse cx="80" cy="30" rx="9" ry="6" fill="#2980b9" />
+          <path
+            d={`M ${cx} ${cy - r} A ${r} ${r} 0 0 1 ${cx} ${cy + r} Z`}
+            fill="#2980b9"
+          />
+          <path
+            d={`M ${cx} ${cy - r} A ${r} ${r} 0 0 0 ${cx} ${cy + r} Z`}
+            fill="#c0392b"
+          />
+          <line
+            x1={cx}
+            y1={cy - r}
+            x2={cx}
+            y2={cy + r}
+            stroke="rgba(255,255,255,0.35)"
+            strokeWidth="0.7"
+          />
+          <text
+            x={cx - r * 0.4}
+            y={cy + 2.5}
+            textAnchor="middle"
+            fontSize="7"
+            fill="white"
+            fontFamily="monospace"
+            fontWeight="bold"
+          >
+            N
+          </text>
+          <text
+            x={cx + r * 0.4}
+            y={cy + 2.5}
+            textAnchor="middle"
+            fontSize="7"
+            fill="white"
+            fontFamily="monospace"
+            fontWeight="bold"
+          >
+            S
+          </text>
         </g>
       </svg>
     );

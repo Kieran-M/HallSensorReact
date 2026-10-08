@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import * as THREE from "three";
+import type { Camera } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useSimulatorStore } from "../../store/simulatorStore";
 import {
@@ -10,26 +10,56 @@ import {
   type CameraSnapAxis,
 } from "../../lib/cameraBridge";
 
-const _offset = new THREE.Vector3();
+/**
+ * Snap via OrbitControls spherical angles so `camera.up` stays world +Y.
+ * Mutating up for top/bottom views (old lookAt path) left controls in a
+ * flipped basis and broke later orbits / snaps.
+ *
+ * Three.js spherical: polar 0 = +Y, azimuth 0 = +Z, +azimuth toward +X.
+ * EPS avoids exact poles where azimuth becomes unstable.
+ */
+const POLE_EPS = 1e-3;
 
-function directionForSnap(axis: CameraSnapAxis): THREE.Vector3 {
-  switch (axis) {
+function applyAxisSnap(
+  controls: OrbitControlsImpl,
+  camera: Camera,
+  snap: CameraSnapAxis,
+): void {
+  camera.up.set(0, 1, 0);
+
+  switch (snap) {
     case "x":
-      return new THREE.Vector3(1, 0, 0);
+      controls.setAzimuthalAngle(Math.PI / 2);
+      controls.setPolarAngle(Math.PI / 2);
+      break;
     case "-x":
-      return new THREE.Vector3(-1, 0, 0);
+      controls.setAzimuthalAngle(-Math.PI / 2);
+      controls.setPolarAngle(Math.PI / 2);
+      break;
     case "y":
-      return new THREE.Vector3(0, 1, 0);
+      controls.setAzimuthalAngle(0);
+      controls.setPolarAngle(POLE_EPS);
+      break;
     case "-y":
-      return new THREE.Vector3(0, -1, 0);
+      controls.setAzimuthalAngle(0);
+      controls.setPolarAngle(Math.PI - POLE_EPS);
+      break;
     case "z":
-      return new THREE.Vector3(0, 0, 1);
+      controls.setAzimuthalAngle(0);
+      controls.setPolarAngle(Math.PI / 2);
+      break;
     case "-z":
-      return new THREE.Vector3(0, 0, -1);
+      controls.setAzimuthalAngle(Math.PI);
+      controls.setPolarAngle(Math.PI / 2);
+      break;
     case "iso":
     default:
-      return new THREE.Vector3(1, 0.75, 1).normalize();
+      controls.setAzimuthalAngle(Math.PI / 4);
+      controls.setPolarAngle(Math.PI / 3);
+      break;
   }
+
+  controls.update();
 }
 
 /**
@@ -51,6 +81,15 @@ export function PersistentOrbitControls() {
     if (controls) {
       controls.target.set(tx, ty, tz);
       controls.update();
+    }
+    // Publish initial pose so the gizmo matches before the first drag.
+    cameraBridge.quaternion.copy(camera.quaternion);
+    if (controls) {
+      cameraBridge.target.copy(controls.target);
+      cameraBridge.distance = Math.max(
+        camera.position.distanceTo(controls.target),
+        0.02,
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -90,17 +129,7 @@ export function PersistentOrbitControls() {
     if (!snap || !controls) return;
     cameraSnapRequest.current = null;
 
-    const target = controls.target;
-    const distance = cameraBridge.distance;
-    const dir = directionForSnap(snap);
-    _offset.copy(dir).multiplyScalar(distance);
-    camera.position.copy(target).add(_offset);
-    camera.up.set(0, 1, 0);
-    if (snap === "y" || snap === "-y") {
-      camera.up.set(0, 0, snap === "y" ? -1 : 1);
-    }
-    camera.lookAt(target);
-    controls.update();
+    applyAxisSnap(controls, camera, snap);
     persist();
   });
 

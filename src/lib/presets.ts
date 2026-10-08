@@ -30,13 +30,13 @@ const N42 = {
   poles: 2,
   material: "NdFeB",
   materialGrade: "N42",
-  remanence: 1.30,
+  remanence: 1.3,
   temperature: 25,
   tempCoefficient: -0.12,
   coercivity: 955,
 } as const;
 
-/** Smaller consumer block magnets are often N35. */
+/** Smaller consumer magnets are often N35. */
 const N35 = {
   ...N42,
   materialGrade: "N35",
@@ -45,30 +45,142 @@ const N35 = {
 } as const;
 
 /**
- * Known-good demos with app-note-like geometries.
- * Units: millimetres and degrees. Sensor face is at the package origin unless noted.
+ * Application-example presets aligned with Magnet_InputParameters.
+ * Units: millimetres and degrees. Sensor face at package origin unless noted.
  *
- * Air-gap convention: for a magnet of height H centred at z, face gap ≈ z − H/2
- * when the sensor is at z = 0 and the magnet approaches along +Z.
+ * Doc mapping:
+ *   Linear, Slide-By     → axial cylinder, linear travel
+ *   Linear, Head-On      → axial cylinder, axial approach
+ *   Arc (Hinge)          → axial cylinder, hinge at origin, ~35° sweep
+ *   Rotation or Spin     → radial (diametric) cylinder, 0–360°
+ *   Rotation (Ring)      → ring, 0–360° (single-segment Magpylib today)
  *
- * Note: use `import type` from the store only — a value import creates a circular init cycle.
+ * Keep stable `id`s for landing SVG previews / store applyPreset.
  */
 export const PRESETS: Record<string, PresetSetup> = {
   /**
-   * Absolute angle — diametric disc over on-axis Hall (or 2D sensor).
-   * Typical: Ø6–10 mm × 2–3 mm disc, 1.0–2.5 mm air gap, 0–360° spin.
+   * Linear, Slide-By — axial cylinder translating laterally at fixed air gap.
+   */
+  "slide-by": {
+    meta: {
+      id: "slide-by",
+      label: "Linear, Slide-By",
+      category: "Linear",
+      description:
+        "Axially magnetized cylinder sliding past the sensor at a fixed air gap. Classic linear position / speed sensing topology.",
+      fieldStrength: "±20–60 mT",
+      waveform: "Bipolar pulse",
+      magnetType: "Axial Cylinder",
+      tags: ["linear", "slide-by", "position"],
+    },
+    magnet: {
+      ...N42,
+      shape: "axial_cylinder",
+      outerDiameter: 6,
+      height: 4,
+    },
+    sensor: { x: 0, y: 0, z: 0 },
+    animation: {
+      type: "linear",
+      // Face gap ≈ 2 mm → centre z = 2 + 4/2 = 4 mm
+      startPosition: { x: -18, y: 0, z: 4 },
+      endPosition: { x: 18, y: 0, z: 4 },
+      startRotation: { x: 0, y: 0, z: 0 },
+      endRotation: { x: 0, y: 0, z: 0 },
+    },
+    duration: 2.5,
+    fps: 60,
+    sensorPackageId: "ah49f",
+  },
+
+  /**
+   * Linear, Head-On — axial cylinder approaching along the sensing axis.
+   */
+  "head-on": {
+    meta: {
+      id: "head-on",
+      label: "Linear, Head-On",
+      category: "Linear",
+      description:
+        "Axially magnetized cylinder approaching the sensor along Z. Monotonic Bz ramp — proximity / head-on switch topology.",
+      fieldStrength: "5–150 mT",
+      waveform: "Linear ramp",
+      magnetType: "Axial Cylinder",
+      tags: ["linear", "head-on", "proximity"],
+    },
+    magnet: {
+      ...N42,
+      shape: "axial_cylinder",
+      outerDiameter: 6,
+      height: 4,
+    },
+    sensor: { x: 0, y: 0, z: 0 },
+    animation: {
+      type: "linear",
+      // Far face gap ≈ 16 mm → z = 18; near face gap ≈ 2 mm → z = 4
+      startPosition: { x: 0, y: 0, z: 18 },
+      endPosition: { x: 0, y: 0, z: 4 },
+      startRotation: { x: 0, y: 0, z: 0 },
+      endRotation: { x: 0, y: 0, z: 0 },
+    },
+    duration: 2.5,
+    fps: 60,
+    sensorPackageId: "ah49f",
+  },
+
+  /**
+   * Arc (Hinge) — axial cylinder on an arm about origin; default arc 35°.
+   */
+  "lid-closure": {
+    meta: {
+      id: "lid-closure",
+      label: "Arc (Hinge)",
+      category: "Arc",
+      description:
+        "Axial cylinder on a hinged arm about the origin (0, 0, 0). Default 35° arc for magnet-angle vs output charts.",
+      fieldStrength: "10–80 mT",
+      waveform: "Angular sweep",
+      magnetType: "Axial Cylinder",
+      tags: ["arc", "hinge", "angle"],
+    },
+    magnet: {
+      ...N35,
+      shape: "axial_cylinder",
+      outerDiameter: 5,
+      height: 3,
+    },
+    // Under the closed arm (angle 0° along +X): small Z face gap
+    sensor: { x: 30, y: 0, z: -2 },
+    animation: {
+      type: "hinge",
+      pivot: { x: 0, y: 0, z: 0 },
+      axis: "y",
+      armLength: 30,
+      // Doc default arc length = 35° (open → closed)
+      startAngle: 35,
+      endAngle: 0,
+      bounce: false,
+    },
+    duration: 1.8,
+    fps: 60,
+    // Latch switch on a closing arc — Chart 3 step + Bop/Brp on field chart
+    sensorPackageId: "ah1711",
+  },
+
+  /**
+   * Rotation or Spin — diametric (radial) cylinder, full turn.
    */
   "angle-encoding": {
     meta: {
       id: "angle-encoding",
-      label: "Angle Encoding",
+      label: "Rotation or Spin",
       category: "Rotary",
       description:
-        "Diametrically magnetized disc magnet rotating above sensor face. Full 360° sinusoidal Bx/By field for absolute angle reconstruction.",
+        "Diametrically magnetized (radial) cylinder spinning above the sensor. Full 360° for magnet-angle vs field / output charts.",
       fieldStrength: "±40–80 mT",
       waveform: "Sinusoidal",
-      magnetType: "Disc — Diametric",
-      tags: ["absolute", "rotary", "encoder"],
+      magnetType: "Radial Cylinder",
+      tags: ["rotation", "spin", "angle"],
     },
     magnet: {
       ...N42,
@@ -87,62 +199,25 @@ export const PRESETS: Record<string, PresetSetup> = {
     },
     duration: 3,
     fps: 60,
-    sensorPackageId: "test",
+    sensorPackageId: "ah49f",
   },
 
   /**
-   * Bipolar slide-by — axial bar past a Z-axis Hall at fixed air gap.
-   * Typical: 10–15 mm long bar, 1.5–3 mm gap, travel spanning ~±1.5× magnet length.
-   */
-  "slide-by": {
-    meta: {
-      id: "slide-by",
-      label: "Slide-by",
-      category: "Linear",
-      description:
-        "Bar magnet translating laterally past the sensor at a fixed air gap. Generates bipolar field transition used for position detection and speed sensing.",
-      fieldStrength: "±30–60 mT",
-      waveform: "Sinusoidal",
-      magnetType: "Bar — Axial",
-      tags: ["linear", "position", "bipolar"],
-    },
-    magnet: {
-      ...N42,
-      shape: "bar",
-      length: 12,
-      width: 5,
-      height: 3,
-    },
-    sensor: { x: 0, y: 0, z: 0 },
-    animation: {
-      type: "linear",
-      // Face gap ≈ 2.0 mm → centre z = 2.0 + 3/2 = 3.5 mm
-      startPosition: { x: -18, y: 0, z: 3.5 },
-      endPosition: { x: 18, y: 0, z: 3.5 },
-      startRotation: { x: 0, y: 0, z: 0 },
-      endRotation: { x: 0, y: 0, z: 0 },
-    },
-    duration: 2.5,
-    fps: 60,
-    // Demo digital unipolar switch (Diodes AH1381)
-    sensorPackageId: "ah1381",
-  },
-
-  /**
-   * Incremental ring — multi-pole ring above face for pulse / quadrature demos.
-   * Typical motor/encoder ring: OD 12–20 mm, 8–16 poles, ~1–2 mm axial gap.
+   * Rotation or Spin (Ring) — ring magnet, full turn.
+   * Note: Magpylib uses a single CylinderSegment today; multi-segment
+   * radial Collection (doc) is not modelled yet — poles are UI metadata.
    */
   "incremental-encoding": {
     meta: {
       id: "incremental-encoding",
-      label: "Incremental Encoding",
+      label: "Rotation or Spin (Ring)",
       category: "Rotary",
       description:
-        "Multi-pole ring magnet with alternating N/S segments passing the sensor. Produces quadrature pulse output for direction and incremental position.",
+        "Ring magnet rotating above the sensor (0–360°). Field uses a single Magpylib ring segment for now; multi-pole radial Collection comes later.",
       fieldStrength: "15–50 mT",
-      waveform: "Square",
-      magnetType: "Ring — Multi-pole",
-      tags: ["quadrature", "ring-magnet", "incremental"],
+      waveform: "Periodic",
+      magnetType: "Ring",
+      tags: ["rotation", "ring", "spin"],
     },
     magnet: {
       ...N42,
@@ -163,88 +238,18 @@ export const PRESETS: Record<string, PresetSetup> = {
     },
     duration: 2,
     fps: 60,
-    sensorPackageId: "test",
-  },
-
-  /**
-   * Head-on / proximity switch — axial cylinder on sensing axis.
-   * Typical: Ø5–8 mm × 3–5 mm, release ~10–20 mm, operate ~1.5–3 mm face gap.
-   */
-  "head-on": {
-    meta: {
-      id: "head-on",
-      label: "Head On",
-      category: "Switch",
-      description:
-        "Axially magnetized cylinder magnet approaching the sensor along the sensing axis. Monotonically increasing Bz field — classic switch and proximity topology.",
-      fieldStrength: "5–150 mT",
-      waveform: "Linear Ramp",
-      magnetType: "Cylinder — Axial",
-      tags: ["proximity", "switch", "axial"],
-    },
-    magnet: {
-      ...N42,
-      shape: "axial_cylinder",
-      outerDiameter: 6,
-      height: 4,
-    },
-    sensor: { x: 0, y: 0, z: 0 },
-    animation: {
-      type: "linear",
-      // Far face gap ≈ 16 mm → z = 16 + 2 = 18; operate face gap ≈ 2 mm → z = 4
-      startPosition: { x: 0, y: 0, z: 18 },
-      endPosition: { x: 0, y: 0, z: 4 },
-      startRotation: { x: 0, y: 0, z: 0 },
-      endRotation: { x: 0, y: 0, z: 0 },
-    },
-    duration: 2.5,
-    fps: 60,
-    sensorPackageId: "test",
-  },
-
-  /**
-   * Lid / flip-cover — small block on a hinged arm over a PCB Hall.
-   * Typical: 4–6 mm NdFeB cube/block, arm 30–50 mm, closed gap 1–3 mm, open ~80–90°.
-   * Closed: magnet at (arm, 0, 0); sensor slightly below for a Z-axis face gap.
-   */
-  "lid-closure": {
-    meta: {
-      id: "lid-closure",
-      label: "Lid Closure",
-      category: "Switch",
-      description:
-        "Small NdFeB block magnet mounted on a hinged lid, swinging into range. Models smartphone flip cover, appliance door, and safety interlock detection.",
-      fieldStrength: "10–80 mT",
-      waveform: "Step",
-      magnetType: "Block — Lateral",
-      tags: ["lid", "switch", "consumer"],
-    },
-    magnet: {
-      ...N35,
-      shape: "bar",
-      length: 5,
-      width: 4,
-      height: 2,
-    },
-    // Under the closed lid: ~2 mm face gap in Z (sensor on PCB)
-    sensor: { x: 40, y: 0, z: -2 },
-    animation: {
-      type: "hinge",
-      pivot: { x: 0, y: 0, z: 0 },
-      axis: "y",
-      armLength: 40,
-      // −90° = open (raised along +Z); 0° = closed along +X over the sensor
-      startAngle: -90,
-      endAngle: 0,
-      bounce: false,
-    },
-    duration: 1.8,
-    fps: 60,
-    sensorPackageId: "test",
+    sensorPackageId: "ah49f",
   },
 };
 
-export const PRESET_LIST: PresetSetup[] = Object.values(PRESETS);
+/** Landing order matches Magnet_InputParameters application examples. */
+export const PRESET_LIST: PresetSetup[] = [
+  PRESETS["slide-by"],
+  PRESETS["head-on"],
+  PRESETS["lid-closure"],
+  PRESETS["angle-encoding"],
+  PRESETS["incremental-encoding"],
+];
 
 export function getPreset(id: string): PresetSetup | undefined {
   return PRESETS[id];

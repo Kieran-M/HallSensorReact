@@ -3,19 +3,25 @@
 /* ── Brand palette ─────────────────────────────────────────── */
 :root {
   --brand-steel: #175d9b;
-  --brand-steel-deep: #306098;
+  --brand-steel-deep: #0e4a7a;
+  --brand-steel-bright: #3b8fd4;
   --brand-steel-soft: #c0d0e0;
+  --brand-cyan: #5ec8d8;
+  --brand-cyan-soft: #a8e4ec;
   --brand-slate: #789db0;
-  --brand-whitesmoke: #f8f7f3;
-  --brand-ghost: #f2f3f8;
-  --brand-azure: #e3f3f5;
+  --brand-whitesmoke: #f4f7fa;
+  --brand-ghost: #eef3f8;
+  --brand-azure: #dceef5;
   --brand-white: #f8f8f8;
-  --brand-navy: #0b1a28;
-  --brand-navy-card: #12283a;
-  --brand-navy-muted: #1a354c;
-  --brand-navy-border: #2a4a66;
-  --brand-navy-grid: #1f3a52;
-  --brand-navy-canvas: #0e2233;
+  --brand-navy: #0a1624;
+  --brand-navy-card: #132f45;
+  --brand-navy-muted: #1c3d58;
+  --brand-navy-border: #356084;
+  --brand-navy-grid: #2a5574;
+  --brand-navy-canvas: #0c1f30;
+  /* Sub-grid must stay clearly above canvas in dark mode */
+  --brand-navy-grid-cell: #4a7fa3;
+  --brand-navy-grid-section: #8ec5e0;
 
   --sans: "Segoe UI", system-ui, sans-serif;
   --heading: "Segoe UI", system-ui, sans-serif;
@@ -27,15 +33,15 @@
   --card: var(--brand-navy-card);
   --card-foreground: var(--brand-ghost);
   --muted: var(--brand-navy-muted);
-  --muted-foreground: var(--brand-slate);
-  --accent: var(--brand-steel-soft);
-  --accent-hover: var(--brand-azure);
+  --muted-foreground: #9bb8cb;
+  --accent: var(--brand-cyan);
+  --accent-hover: var(--brand-cyan-soft);
   --accent-foreground: var(--brand-navy);
   --border: var(--brand-navy-border);
   --chart-grid: var(--brand-navy-grid);
   --canvas: var(--brand-navy-canvas);
-  --grid-cell: #1a354c;
-  --grid-section: #c0d0e0;
+  --grid-cell: var(--brand-navy-grid-cell);
+  --grid-section: var(--brand-navy-grid-section);
 
   /* Slightly larger base for denser mono UI labels */
   font: 17px/150% var(--sans);
@@ -56,32 +62,32 @@
   --card: var(--brand-navy-card);
   --card-foreground: var(--brand-ghost);
   --muted: var(--brand-navy-muted);
-  --muted-foreground: var(--brand-slate);
-  --accent: var(--brand-steel-soft);
-  --accent-hover: var(--brand-azure);
+  --muted-foreground: #9bb8cb;
+  --accent: var(--brand-cyan);
+  --accent-hover: var(--brand-cyan-soft);
   --accent-foreground: var(--brand-navy);
   --border: var(--brand-navy-border);
   --chart-grid: var(--brand-navy-grid);
   --canvas: var(--brand-navy-canvas);
-  --grid-cell: #1a354c;
-  --grid-section: #c0d0e0;
+  --grid-cell: var(--brand-navy-grid-cell);
+  --grid-section: var(--brand-navy-grid-section);
 }
 
 [data-theme="light"] {
   color-scheme: light;
   --background: var(--brand-whitesmoke);
   --foreground: var(--brand-navy);
-  --card: var(--brand-ghost);
+  --card: #ffffff;
   --card-foreground: var(--brand-navy);
   --muted: var(--brand-azure);
-  --muted-foreground: var(--brand-slate);
-  --accent: var(--brand-steel);
-  --accent-hover: var(--brand-steel-deep);
+  --muted-foreground: #4a6f86;
+  --accent: var(--brand-steel-bright);
+  --accent-hover: var(--brand-steel);
   --accent-foreground: var(--brand-white);
-  --border: var(--brand-steel-soft);
-  --chart-grid: var(--brand-steel-soft);
-  --canvas: var(--brand-azure);
-  --grid-cell: #306098;
+  --border: #9bb9d0;
+  --chart-grid: #b7cfe0;
+  --canvas: #c5e0ec;
+  --grid-cell: #5a8fb8;
   --grid-section: #175d9b;
 }
 

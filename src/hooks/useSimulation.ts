@@ -1,4 +1,5 @@
 import { runSimulation } from "../lib/simulationApi";
+import { resolveOperateSupply } from "../lib/sensitivityDisplay";
 import { useSimulatorStore } from "../store/simulatorStore";
 
 export function useSimulation(): {
@@ -11,7 +12,19 @@ export function useSimulation(): {
 
   const simulate = async (): Promise<void> => {
     const store = useSimulatorStore.getState();
-    const { magnet, sensor, sensorPackageId, animation, duration, fps } = store;
+    const {
+      magnet,
+      sensor,
+      sensorPackageId,
+      sensorCatalog,
+      supplyVdd,
+      animation,
+      duration,
+      fps,
+    } = store;
+
+    const pkg = sensorCatalog.find((p) => p.id === sensorPackageId);
+    const supply = resolveOperateSupply(pkg, supplyVdd);
 
     store.setSimulating(true);
     store.setSimulationError(null);
@@ -24,6 +37,7 @@ export function useSimulation(): {
         fps,
         duration,
         sensorPackageId,
+        supply,
       });
 
       useSimulatorStore.getState().setSimulationResult(result);

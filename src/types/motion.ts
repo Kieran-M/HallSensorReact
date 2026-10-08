@@ -61,12 +61,13 @@ export const DEFAULT_ROTATE: RotateMovement = {
   endAngle: 360,
 };
 
+/** Doc default arc length = 35° about origin hinge. */
 export const DEFAULT_HINGE: HingeMovement = {
   type: "hinge",
   pivot: { x: 0, y: 0, z: 0 },
   axis: "y",
-  armLength: 38,
-  startAngle: 70,
+  armLength: 30,
+  startAngle: 35,
   endAngle: 0,
   bounce: false,
 };

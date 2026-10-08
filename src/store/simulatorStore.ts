@@ -89,9 +89,15 @@ interface SimulatorStore {
   sensor: SensorPosition;
   sensorPackageId: string;
   sensorCatalog: SensorPackageInfo[];
+  /**
+   * Operate supply (VDD) for ratiometric linear parts.
+   * Null → use the selected package's catalog default at simulate time.
+   */
+  supplyVdd: number | null;
   setSensorPosition: (sensor: SensorPosition) => void;
   setSensorPackageId: (id: string) => void;
   setSensorCatalog: (packages: SensorPackageInfo[]) => void;
+  setSupplyVdd: (supply: number | null) => void;
 
   setAnimation: (animation: AnimationParams) => void;
   setMotionType: (type: MotionType) => void;
@@ -187,12 +193,23 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     y: 0,
     z: 0,
   },
-  sensorPackageId: "test",
+  sensorPackageId: "ah49f",
   sensorCatalog: [],
+  supplyVdd: null,
 
   setSensorPosition: (sensor) => set({ sensor, activePreset: null }),
-  setSensorPackageId: (sensorPackageId) => set({ sensorPackageId }),
+  setSensorPackageId: (sensorPackageId) =>
+    set((state) => {
+      const pkg = state.sensorCatalog.find((p) => p.id === sensorPackageId);
+      return {
+        sensorPackageId,
+        // Reset VDD to the new package default when picking a part
+        supplyVdd: pkg?.supply ?? null,
+        activePreset: null,
+      };
+    }),
   setSensorCatalog: (sensorCatalog) => set({ sensorCatalog }),
+  setSupplyVdd: (supplyVdd) => set({ supplyVdd, activePreset: null }),
 
   activePreset: null,
 
@@ -206,6 +223,7 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
       duration: preset.duration,
       fps: preset.fps,
       sensorPackageId: preset.sensorPackageId,
+      supplyVdd: null,
       activePreset: { id: preset.meta.id, label: preset.meta.label },
       mode: "edit",
       playing: false,
@@ -221,21 +239,25 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
   },
 
   applyCustomSetup: ({ motionType, magnetShape, sensorPackageId }) => {
-    set({
-      magnet: SHAPE_DEFAULTS[magnetShape],
-      sensor: { x: 0, y: 0, z: 0 },
-      animation: defaultAnimationForType(motionType),
-      duration: 3,
-      fps: 60,
-      sensorPackageId,
-      activePreset: { id: "custom", label: "Custom Setup" },
-      mode: "edit",
-      playing: false,
-      currentFrame: 0,
-      currentTime: 0,
-      simulation: null,
-      simulationError: null,
-      view: "design",
+    set((state) => {
+      const pkg = state.sensorCatalog.find((p) => p.id === sensorPackageId);
+      return {
+        magnet: SHAPE_DEFAULTS[magnetShape],
+        sensor: { x: 0, y: 0, z: 0 },
+        animation: defaultAnimationForType(motionType),
+        duration: 3,
+        fps: 60,
+        sensorPackageId,
+        supplyVdd: pkg?.supply ?? null,
+        activePreset: { id: "custom", label: "Custom Setup" },
+        mode: "edit" as const,
+        playing: false,
+        currentFrame: 0,
+        currentTime: 0,
+        simulation: null,
+        simulationError: null,
+        view: "design" as const,
+      };
     });
     simulationFramesRef.current = [];
     syncPlaybackFrame(0);

@@ -47,9 +47,9 @@ export function DesignView({ active = true }: DesignViewProps) {
 
   const { canvasBg, gridCell, gridSection } = useMemo(
     () => ({
-      canvasBg: readCssVar("--canvas", "#0e2233"),
-      gridCell: readCssVar("--grid-cell", "#1a354c"),
-      gridSection: readCssVar("--grid-section", "#c0d0e0"),
+      canvasBg: readCssVar("--canvas", "#0c1f30"),
+      gridCell: readCssVar("--grid-cell", "#4a7fa3"),
+      gridSection: readCssVar("--grid-section", "#8ec5e0"),
     }),
     [theme],
   );
@@ -59,6 +59,8 @@ export function DesignView({ active = true }: DesignViewProps) {
       <div className="absolute inset-0">
         <Canvas
           frameloop={active ? "always" : "demand"}
+          dpr={[1, 1.5]}
+          gl={{ antialias: true, powerPreference: "high-performance" }}
           camera={{
             position: cameraView.position,
             fov: 50,
@@ -92,9 +94,13 @@ export function DesignView({ active = true }: DesignViewProps) {
           <Grid
             infiniteGrid
             args={[1, 1]}
-            cellSize={0.01}
-            sectionSize={0.1}
-            fadeDistance={12}
+            cellSize={0.005}
+            sectionSize={0.05}
+            cellThickness={theme === "dark" ? 0.85 : 0.65}
+            sectionThickness={theme === "dark" ? 1.35 : 1.15}
+            fadeDistance={4.5}
+            fadeStrength={1.75}
+            fadeFrom={0.35}
             cellColor={gridCell}
             sectionColor={gridSection}
           />
@@ -144,39 +150,56 @@ export function DesignView({ active = true }: DesignViewProps) {
             </div>
           </div>
 
-          <div className="absolute bottom-4 left-4 z-[3] pointer-events-none flex flex-wrap gap-3 max-w-[min(100%,28rem)]">
-            <div className="flex items-center gap-1.5 bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
-              <div className="w-2 h-2 rounded-sm bg-[#c0392b]" />
-              <span className="font-mono text-xs text-(--muted-foreground)">
-                N pole
-              </span>
+          <div className="absolute bottom-4 left-4 z-[3] pointer-events-none flex flex-col gap-2 max-w-[min(100%,28rem)]">
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-1.5 bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
+                <div className="w-2 h-2 rounded-sm bg-[#c0392b]" />
+                <span className="font-mono text-xs text-(--muted-foreground)">
+                  N pole
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
+                <div className="w-2 h-2 rounded-sm bg-[#2980b9]" />
+                <span className="font-mono text-xs text-(--muted-foreground)">
+                  S pole
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
+                <div className="w-2 h-2 rounded-full border border-(--accent)" />
+                <span className="font-mono text-xs text-(--muted-foreground)">
+                  Sensor
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
+                <div
+                  className="w-3 h-0.5 rounded-full"
+                  style={{
+                    background:
+                      "repeating-linear-gradient(90deg, #c0d0e0 0 3px, transparent 3px 5px)",
+                  }}
+                />
+                <span className="font-mono text-xs text-(--muted-foreground)">
+                  Path
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
-              <div className="w-2 h-2 rounded-sm bg-[#2980b9]" />
-              <span className="font-mono text-xs text-(--muted-foreground)">
-                S pole
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
-              <div className="w-2 h-2 rounded-full border border-(--accent)" />
-              <span className="font-mono text-xs text-(--muted-foreground)">
-                Sensor
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
-              <div
-                className="w-3 h-0.5 rounded-full"
-                style={{
-                  background:
-                    "repeating-linear-gradient(90deg, #c0d0e0 0 3px, transparent 3px 5px)",
-                }}
-              />
-              <span className="font-mono text-xs text-(--muted-foreground)">
-                Path
+            <div className="bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
+              <span className="font-mono text-[10px] text-(--muted-foreground) leading-relaxed">
+                B-field from Magpylib · idealised magnet model
               </span>
             </div>
           </div>
         </>
+      )}
+
+      {isResults && (
+        <div className="absolute bottom-4 left-4 z-[3] pointer-events-none">
+          <div className="bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
+            <span className="font-mono text-[10px] text-(--muted-foreground)">
+              B-field from Magpylib · idealised magnet model
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );

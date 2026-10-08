@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import type { ChartXMode, FieldSample } from "../../lib/fieldMath";
 import { chartXLabel, chartXUnit } from "../../lib/fieldMath";
+import type { SensingAxis } from "../../types/simulation";
 import { GraphCard, SeriesToggle } from "./ChartPrimitives";
 import {
   CHART_MARGIN,
@@ -30,6 +31,9 @@ interface ResponseChartsProps {
   supply: number;
   vref: number | null;
   digital?: boolean;
+  bopGauss?: number | null;
+  brpGauss?: number | null;
+  sensingAxis?: SensingAxis;
   summary: {
     peakB: number;
     minB: number;
@@ -51,17 +55,21 @@ export function ResponseCharts({
   supply,
   vref,
   digital = false,
+  bopGauss = null,
+  brpGauss = null,
+  sensingAxis = "z",
   summary,
   showSummary,
 }: ResponseChartsProps) {
   const xAxis = motionXAxisProps(chartXUnit(xMode));
   const xTitle = chartXLabel(xMode);
+  const senseKey = `b${sensingAxis}` as "bx" | "by" | "bz";
 
   return (
     <>
       <GraphCard
         title="Magnetic Field Density"
-        subtitle={`vs ${xTitle} · Flux density (G)`}
+        subtitle={`vs ${xTitle} · Flux density (G) · sense ${sensingAxis.toUpperCase()}`}
         toggles={
           <>
             <SeriesToggle
@@ -94,12 +102,42 @@ export function ResponseCharts({
             <YAxis {...VALUE_Y_AXIS_PROPS} width={48} unit=" G" />
             {sharedTooltip}
             {playhead}
+            {digital && bopGauss != null && (
+              <ReferenceLine
+                y={bopGauss}
+                stroke="#f87171"
+                strokeDasharray="5 4"
+                strokeWidth={1.25}
+                label={{
+                  value: "Bop",
+                  position: "insideTopRight",
+                  fill: "#f87171",
+                  fontSize: 10,
+                  fontFamily: "ui-monospace, monospace",
+                }}
+              />
+            )}
+            {digital && brpGauss != null && (
+              <ReferenceLine
+                y={brpGauss}
+                stroke="#60a5fa"
+                strokeDasharray="5 4"
+                strokeWidth={1.25}
+                label={{
+                  value: "Brp",
+                  position: "insideBottomRight",
+                  fill: "#60a5fa",
+                  fontSize: 10,
+                  fontFamily: "ui-monospace, monospace",
+                }}
+              />
+            )}
             {visible.bx && (
               <Line
                 type="monotone"
                 dataKey="bx"
                 stroke={SERIES_META.bx.color}
-                strokeWidth={2}
+                strokeWidth={senseKey === "bx" ? 2.5 : 2}
                 dot={false}
                 activeDot={{ r: 5, strokeWidth: 0 }}
                 name="Bx"
@@ -111,7 +149,7 @@ export function ResponseCharts({
                 type="monotone"
                 dataKey="by"
                 stroke={SERIES_META.by.color}
-                strokeWidth={2}
+                strokeWidth={senseKey === "by" ? 2.5 : 2}
                 dot={false}
                 activeDot={{ r: 5, strokeWidth: 0 }}
                 name="By"
@@ -123,7 +161,7 @@ export function ResponseCharts({
                 type="monotone"
                 dataKey="bz"
                 stroke={SERIES_META.bz.color}
-                strokeWidth={2}
+                strokeWidth={senseKey === "bz" ? 2.5 : 2}
                 dot={false}
                 activeDot={{ r: 5, strokeWidth: 0 }}
                 name="Bz"
@@ -135,7 +173,8 @@ export function ResponseCharts({
                 type="monotone"
                 dataKey="btotal"
                 stroke={SERIES_META.btotal.color}
-                strokeWidth={2.5}
+                strokeWidth={2}
+                strokeOpacity={0.85}
                 dot={false}
                 activeDot={{ r: 5, strokeWidth: 0 }}
                 name="|B|"

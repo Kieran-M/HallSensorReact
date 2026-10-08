@@ -17,6 +17,8 @@ export interface SimulationRequest {
   fps: number;
   duration: number;
   sensorPackageId: string;
+  /** Optional operate supply (VDD); omits → package catalog default. */
+  supply?: number;
 }
 
 function apiBaseUrl(): string {

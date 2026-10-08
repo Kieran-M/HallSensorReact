@@ -5,6 +5,10 @@ import {
   hallTypeColor,
   PACKAGE_OUTLINE_LABELS,
 } from "../../../lib/packageVisuals";
+import {
+  resolveOperateSupply,
+  sensitivityMvPerG,
+} from "../../../lib/sensitivityDisplay";
 import { useSimulatorStore } from "../../../store/simulatorStore";
 import type { HallType, SensorPackageInfo } from "../../../types/simulation";
 import { PackageThumb } from "./PackageThumb";
@@ -61,7 +65,14 @@ function TypeBadge({ type }: { type: HallType }) {
   );
 }
 
-function PackageMeta({ pkg }: { pkg: SensorPackageInfo }) {
+function PackageMeta({
+  pkg,
+  supplyV,
+}: {
+  pkg: SensorPackageInfo;
+  supplyV: number;
+}) {
+  const sensMvG = sensitivityMvPerG(pkg, supplyV);
   return (
     <div className="font-mono text-xs text-[var(--muted-foreground)] space-y-0.5">
       <div>
@@ -69,16 +80,21 @@ function PackageMeta({ pkg }: { pkg: SensorPackageInfo }) {
         {pkg.packages[0] ? ` · ${pkg.packages[0]}` : ""}
       </div>
       <div>
-        {pkg.outputType} · {pkg.supply} V · axis {pkg.sensingAxis.toUpperCase()}
+        {pkg.outputType} · axis {pkg.sensingAxis.toUpperCase()}
       </div>
       {pkg.hallType === "linear" ? (
         <div>
-          Sensitivity {pkg.sensitivityVPerT ?? "—"} V/T · Vref {pkg.vref ?? "—"}{" "}
-          V
+          {sensMvG != null
+            ? `Sens ${sensMvG.toFixed(2)} mV/G @ ${supplyV.toFixed(2)} V`
+            : "Sens —"}
+          {" · "}
+          Vref {(supplyV / 2).toFixed(2)} V
         </div>
       ) : (
         <div>
           Bop {pkg.bopTypGauss ?? "—"} G · Brp {pkg.brpTypGauss ?? "—"} G
+          {" · "}
+          VDD {supplyV.toFixed(2)} V
         </div>
       )}
     </div>
@@ -289,7 +305,7 @@ function SensorCatalogModal({
                       <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed line-clamp-2">
                         {pkg.description}
                       </p>
-                      <PackageMeta pkg={pkg} />
+                      <PackageMeta pkg={pkg} supplyV={pkg.supply} />
                     </div>
                   </button>
                 </li>
@@ -309,6 +325,9 @@ export function SensorPackageFields() {
   const setSensorPackageId = useSimulatorStore((s) => s.setSensorPackageId);
   const setSensorCatalog = useSimulatorStore((s) => s.setSensorCatalog);
   const packages = useSimulatorStore((s) => s.sensorCatalog);
+  const supplyVdd = useSimulatorStore((s) => s.supplyVdd);
+  const setSupplyVdd = useSimulatorStore((s) => s.setSupplyVdd);
+  const vddInputId = useId();
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -342,6 +361,7 @@ export function SensorPackageFields() {
   const selectedColor = selected
     ? hallTypeColor(selected.hallType)
     : hallTypeColor("linear");
+  const operateSupply = resolveOperateSupply(selected, supplyVdd);
 
   return (
     <div className="space-y-3">
@@ -378,7 +398,7 @@ export function SensorPackageFields() {
               <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed line-clamp-2">
                 {selected.description}
               </p>
-              <PackageMeta pkg={selected} />
+              <PackageMeta pkg={selected} supplyV={operateSupply} />
             </div>
           </div>
         ) : (
@@ -389,6 +409,46 @@ export function SensorPackageFields() {
           </p>
         )}
       </div>
+
+      {selected && (
+        <div className="space-y-1.5">
+          <label
+            htmlFor={vddInputId}
+            className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]"
+          >
+            Supply VDD (V)
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              id={vddInputId}
+              type="number"
+              min={0.5}
+              max={24}
+              step={0.1}
+              value={Number(operateSupply.toFixed(2))}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                if (!Number.isFinite(n)) return;
+                setSupplyVdd(Math.min(24, Math.max(0.5, n)));
+              }}
+              className="w-full font-mono text-[13px] rounded-sm px-2.5 py-2 bg-[var(--background)] text-[var(--foreground)] border border-[var(--border)] focus:outline-none focus:border-[var(--accent)]"
+            />
+            <button
+              type="button"
+              title="Reset to package default"
+              onClick={() => setSupplyVdd(selected.supply)}
+              className="shrink-0 font-mono text-[11px] uppercase tracking-widest px-2.5 py-2 rounded-sm border border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+            >
+              Def
+            </button>
+          </div>
+          <p className="font-mono text-[10px] text-[var(--muted-foreground)] leading-relaxed">
+            {selected.hallType === "linear"
+              ? "Ratiometric parts: sensitivity scales with VDD."
+              : "Sets digital output rail high level (~VDD)."}
+          </p>
+        </div>
+      )}
 
       <button
         type="button"

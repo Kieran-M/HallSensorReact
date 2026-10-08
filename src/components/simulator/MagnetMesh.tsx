@@ -14,6 +14,8 @@ import { MagnetGeometry } from "./magnet/geometries";
 // Pose path: edit mode uses evaluateMotionPose (preview); playback uses
 // applyFramePose(playbackFrameRef) against simulation frames (metres / rad).
 
+const _editEuler = new THREE.Euler();
+
 function axisLength(config: MagnetParams): number {
   let mm = 10;
   switch (config.shape) {
@@ -133,14 +135,13 @@ export function Magnet({ config }: { config: MagnetParams }) {
         editPose.position[1],
         editPose.position[2],
       );
-      group.quaternion.setFromEuler(
-        new THREE.Euler(
-          editPose.rotation[0],
-          editPose.rotation[1],
-          editPose.rotation[2],
-          "XYZ",
-        ),
+      _editEuler.set(
+        editPose.rotation[0],
+        editPose.rotation[1],
+        editPose.rotation[2],
+        "XYZ",
       );
+      group.quaternion.setFromEuler(_editEuler);
       return;
     }
 

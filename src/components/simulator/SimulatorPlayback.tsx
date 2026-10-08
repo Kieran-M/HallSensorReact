@@ -13,7 +13,8 @@ const UI_SYNC_MS = 80;
 
 /**
  * Advances the playback frame ref every rAF (cheap).
- * Also drives smooth seeks (Reset). Throttles Zustand UI sync.
+ * Also drives smooth seeks (Reset). Throttles Zustand UI sync so live
+ * output / charts keep updating during orbit.
  */
 export function SimulationPlayback() {
   const lastUiSync = useRef(0);

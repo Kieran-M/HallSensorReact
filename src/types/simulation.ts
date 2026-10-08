@@ -13,6 +13,13 @@ export type SensingAxis = "x" | "y" | "z";
 export type ActiveLevel = "low" | "high";
 export type PackageOutline = "sot23" | "sc59" | "sot553" | "sip3" | "dfn";
 
+/** Catalog coefficients: Sens(mV/G) = slope × VDD + intercept */
+export interface RatiometricSensitivityModel {
+  type: "ratiometric_mv_per_g";
+  slope: number;
+  intercept: number;
+}
+
 export interface SensorPackageInfo {
   id: string;
   partNumber: string;
@@ -24,6 +31,7 @@ export interface SensorPackageInfo {
   sensitivityVPerT?: number | null;
   vref?: number | null;
   adcBits?: number | null;
+  sensitivityModel?: RatiometricSensitivityModel | null;
   bopTypGauss?: number | null;
   brpTypGauss?: number | null;
   activeLevel?: ActiveLevel | null;
