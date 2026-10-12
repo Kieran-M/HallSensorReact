@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SERIES_META, type SeriesKey } from "./seriesMeta";
+import { SERIES_META, THRESHOLD_META, type SeriesKey } from "./seriesMeta";
 
 export function ChartTooltip({
   active,
@@ -114,15 +114,96 @@ export function SeriesToggle({
   );
 }
 
+/** Non-interactive legend chip for digital Bop / Brp reference lines. */
+export function ThresholdKey({
+  kind,
+  valueGauss,
+}: {
+  kind: keyof typeof THRESHOLD_META;
+  valueGauss: number;
+}) {
+  const meta = THRESHOLD_META[kind];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[13px] uppercase tracking-widest"
+      title={`${meta.fullLabel}: ${valueGauss} G`}
+      style={{
+        border: "1px solid",
+        borderColor: `color-mix(in srgb, ${meta.color} 65%, var(--border))`,
+        backgroundColor: `color-mix(in srgb, ${meta.color} 14%, transparent)`,
+        color: "var(--foreground)",
+      }}
+    >
+      <span
+        aria-hidden
+        className="inline-block w-3.5 h-[2px]"
+        style={{
+          background: `repeating-linear-gradient(90deg, ${meta.color} 0 3px, transparent 3px 5px)`,
+        }}
+      />
+      <span style={{ color: meta.color }}>{meta.label}</span>
+      <span style={{ color: "var(--muted-foreground)", letterSpacing: "0.04em" }}>
+        {valueGauss.toFixed(Number.isInteger(valueGauss) ? 0 : 1)} G
+      </span>
+    </span>
+  );
+}
+
+/** SVG label for Recharts ReferenceLine — pill with name + value. */
+export function ThresholdLineLabel({
+  viewBox,
+  kind,
+  valueGauss,
+  offsetY = 0,
+}: {
+  viewBox?: { x?: number; y?: number; width?: number };
+  kind: keyof typeof THRESHOLD_META;
+  valueGauss: number;
+  offsetY?: number;
+}) {
+  const meta = THRESHOLD_META[kind];
+  const x = (viewBox?.x ?? 0) + (viewBox?.width ?? 0) - 6;
+  const y = (viewBox?.y ?? 0) + offsetY;
+  const text = `${meta.label} ${valueGauss.toFixed(Number.isInteger(valueGauss) ? 0 : 1)} G`;
+  const w = Math.max(72, text.length * 6.4 + 14);
+  const h = 16;
+  return (
+    <g transform={`translate(${x - w}, ${y - h - 2})`} style={{ pointerEvents: "none" }}>
+      <rect
+        width={w}
+        height={h}
+        rx={2}
+        fill="color-mix(in srgb, var(--card) 92%, transparent)"
+        stroke={meta.color}
+        strokeWidth={1}
+      />
+      <text
+        x={w / 2}
+        y={h / 2 + 0.5}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={meta.color}
+        fontFamily="ui-monospace, monospace"
+        fontSize={10}
+        fontWeight={600}
+      >
+        {text}
+      </text>
+    </g>
+  );
+}
+
 export function GraphCard({
   title,
   subtitle,
   toggles,
+  actions,
   children,
 }: {
   title: string;
   subtitle: string;
   toggles?: ReactNode;
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -134,7 +215,7 @@ export function GraphCard({
       }}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div
             className="font-mono text-[13px] uppercase tracking-widest"
             style={{ color: "var(--accent)" }}
@@ -148,9 +229,67 @@ export function GraphCard({
             {subtitle}
           </div>
         </div>
+        {actions}
       </div>
       {toggles && <div className="flex flex-wrap gap-1.5">{toggles}</div>}
       {children}
+    </div>
+  );
+}
+
+export function ChartZoomControls({
+  zoomed,
+  onZoomIn,
+  onZoomOut,
+  onPanLeft,
+  onPanRight,
+  onReset,
+}: {
+  zoomed: boolean;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onPanLeft: () => void;
+  onPanRight: () => void;
+  onReset: () => void;
+}) {
+  const btn =
+    "font-mono text-[11px] uppercase tracking-widest px-2 py-1 rounded-sm border transition-colors disabled:opacity-35 disabled:cursor-not-allowed";
+  const style = {
+    borderColor: "var(--border)",
+    color: "var(--muted-foreground)",
+    backgroundColor: "transparent",
+  } as const;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1 shrink-0" role="group" aria-label="Chart zoom">
+      <button type="button" className={btn} style={style} onClick={onPanLeft} disabled={!zoomed} title="Pan left">
+        ←
+      </button>
+      <button type="button" className={btn} style={style} onClick={onZoomOut} title="Zoom out">
+        −
+      </button>
+      <button type="button" className={btn} style={style} onClick={onZoomIn} title="Zoom in">
+        +
+      </button>
+      <button type="button" className={btn} style={style} onClick={onPanRight} disabled={!zoomed} title="Pan right">
+        →
+      </button>
+      <button
+        type="button"
+        className={btn}
+        style={{
+          ...style,
+          color: zoomed ? "var(--accent)" : "var(--muted-foreground)",
+          borderColor: zoomed
+            ? "color-mix(in srgb, var(--accent) 55%, var(--border))"
+            : "var(--border)",
+        }}
+        onClick={onReset}
+        disabled={!zoomed}
+        title="Reset zoom"
+      >
+        Reset
+      </button>
     </div>
   );
 }

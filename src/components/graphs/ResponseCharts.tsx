@@ -7,14 +7,23 @@ import {
   CartesianGrid,
   ResponsiveContainer,
   ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 import type { ChartXMode, FieldSample } from "../../lib/fieldMath";
 import { chartXLabel, chartXUnit } from "../../lib/fieldMath";
+import { useChartZoom } from "../../lib/chartZoom";
 import type { SensingAxis } from "../../types/simulation";
-import { GraphCard, SeriesToggle } from "./ChartPrimitives";
+import {
+  ChartZoomControls,
+  GraphCard,
+  SeriesToggle,
+  ThresholdKey,
+  ThresholdLineLabel,
+} from "./ChartPrimitives";
 import {
   CHART_MARGIN,
   SERIES_META,
+  THRESHOLD_META,
   VALUE_Y_AXIS_PROPS,
   motionXAxisProps,
   type SeriesKey,
@@ -61,15 +70,37 @@ export function ResponseCharts({
   summary,
   showSummary,
 }: ResponseChartsProps) {
-  const xAxis = motionXAxisProps(chartXUnit(xMode));
+  const xUnit = chartXUnit(xMode);
   const xTitle = chartXLabel(xMode);
   const senseKey = `b${sensingAxis}` as "bx" | "by" | "bz";
+
+  const fieldZoom = useChartZoom(dataset);
+  const outputZoom = useChartZoom(dataset);
+
+  const fieldXAxis = motionXAxisProps(
+    xUnit,
+    fieldZoom.domain ?? ["dataMin", "dataMax"],
+  );
+  const outputXAxis = motionXAxisProps(
+    xUnit,
+    outputZoom.domain ?? ["dataMin", "dataMax"],
+  );
 
   return (
     <>
       <GraphCard
         title="Magnetic Field Density"
         subtitle={`vs ${xTitle} · Flux density (G) · sense ${sensingAxis.toUpperCase()}`}
+        actions={
+          <ChartZoomControls
+            zoomed={fieldZoom.zoomed}
+            onZoomIn={fieldZoom.onZoomIn}
+            onZoomOut={fieldZoom.onZoomOut}
+            onPanLeft={fieldZoom.onPanLeft}
+            onPanRight={fieldZoom.onPanRight}
+            onReset={fieldZoom.onReset}
+          />
+        }
         toggles={
           <>
             <SeriesToggle
@@ -92,102 +123,154 @@ export function ResponseCharts({
               active={visible.btotal}
               onToggle={() => onToggle("btotal")}
             />
+            {digital && (bopGauss != null || brpGauss != null) && (
+              <span
+                className="mx-0.5 h-4 w-px self-center"
+                style={{ backgroundColor: "var(--border)" }}
+                aria-hidden
+              />
+            )}
+            {digital && bopGauss != null && (
+              <ThresholdKey kind="bop" valueGauss={bopGauss} />
+            )}
+            {digital && brpGauss != null && (
+              <ThresholdKey kind="brp" valueGauss={brpGauss} />
+            )}
           </>
         }
       >
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={dataset} syncId="hallsim" margin={CHART_MARGIN}>
-            <CartesianGrid strokeDasharray="2 4" stroke="var(--chart-grid)" />
-            <XAxis {...xAxis} />
-            <YAxis {...VALUE_Y_AXIS_PROPS} width={48} unit=" G" />
-            {sharedTooltip}
-            {playhead}
-            {digital && bopGauss != null && (
-              <ReferenceLine
-                y={bopGauss}
-                stroke="#f87171"
-                strokeDasharray="5 4"
-                strokeWidth={1.25}
-                label={{
-                  value: "Bop",
-                  position: "insideTopRight",
-                  fill: "#f87171",
-                  fontSize: 10,
-                  fontFamily: "ui-monospace, monospace",
-                }}
-              />
-            )}
-            {digital && brpGauss != null && (
-              <ReferenceLine
-                y={brpGauss}
-                stroke="#60a5fa"
-                strokeDasharray="5 4"
-                strokeWidth={1.25}
-                label={{
-                  value: "Brp",
-                  position: "insideBottomRight",
-                  fill: "#60a5fa",
-                  fontSize: 10,
-                  fontFamily: "ui-monospace, monospace",
-                }}
-              />
-            )}
-            {visible.bx && (
-              <Line
-                type="monotone"
-                dataKey="bx"
-                stroke={SERIES_META.bx.color}
-                strokeWidth={senseKey === "bx" ? 2.5 : 2}
-                dot={false}
-                activeDot={{ r: 5, strokeWidth: 0 }}
-                name="Bx"
-                isAnimationActive={false}
-              />
-            )}
-            {visible.by && (
-              <Line
-                type="monotone"
-                dataKey="by"
-                stroke={SERIES_META.by.color}
-                strokeWidth={senseKey === "by" ? 2.5 : 2}
-                dot={false}
-                activeDot={{ r: 5, strokeWidth: 0 }}
-                name="By"
-                isAnimationActive={false}
-              />
-            )}
-            {visible.bz && (
-              <Line
-                type="monotone"
-                dataKey="bz"
-                stroke={SERIES_META.bz.color}
-                strokeWidth={senseKey === "bz" ? 2.5 : 2}
-                dot={false}
-                activeDot={{ r: 5, strokeWidth: 0 }}
-                name="Bz"
-                isAnimationActive={false}
-              />
-            )}
-            {visible.btotal && (
-              <Line
-                type="monotone"
-                dataKey="btotal"
-                stroke={SERIES_META.btotal.color}
-                strokeWidth={2}
-                strokeOpacity={0.85}
-                dot={false}
-                activeDot={{ r: 5, strokeWidth: 0 }}
-                name="|B|"
-                isAnimationActive={false}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
+        <div
+          onWheel={fieldZoom.onWheel}
+          className="select-none"
+          title="Scroll to zoom · drag to select · double-click reset"
+        >
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart
+              data={dataset}
+              margin={CHART_MARGIN}
+              {...fieldZoom.chartHandlers}
+            >
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--chart-grid)" />
+              <XAxis {...fieldXAxis} />
+              <YAxis {...VALUE_Y_AXIS_PROPS} width={48} unit=" G" />
+              {sharedTooltip}
+              {playhead}
+              {fieldZoom.selectRange && (
+                <ReferenceArea
+                  x1={fieldZoom.selectRange[0]}
+                  x2={fieldZoom.selectRange[1]}
+                  strokeOpacity={0.3}
+                  fill="var(--accent)"
+                  fillOpacity={0.12}
+                />
+              )}
+              {digital && bopGauss != null && (
+                <ReferenceLine
+                  y={bopGauss}
+                  stroke={THRESHOLD_META.bop.color}
+                  strokeDasharray="6 3"
+                  strokeWidth={1.75}
+                  ifOverflow="extendDomain"
+                  label={
+                    <ThresholdLineLabel
+                      kind="bop"
+                      valueGauss={bopGauss}
+                      offsetY={
+                        brpGauss != null && Math.abs(bopGauss - brpGauss) < 8
+                          ? -2
+                          : 0
+                      }
+                    />
+                  }
+                />
+              )}
+              {digital && brpGauss != null && (
+                <ReferenceLine
+                  y={brpGauss}
+                  stroke={THRESHOLD_META.brp.color}
+                  strokeDasharray="6 3"
+                  strokeWidth={1.75}
+                  ifOverflow="extendDomain"
+                  label={
+                    <ThresholdLineLabel
+                      kind="brp"
+                      valueGauss={brpGauss}
+                      offsetY={
+                        bopGauss != null && Math.abs(bopGauss - brpGauss) < 8
+                          ? 18
+                          : 0
+                      }
+                    />
+                  }
+                />
+              )}
+              {visible.bx && (
+                <Line
+                  type="monotone"
+                  dataKey="bx"
+                  stroke={SERIES_META.bx.color}
+                  strokeWidth={senseKey === "bx" ? 2.5 : 2}
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  name="Bx"
+                  isAnimationActive={false}
+                />
+              )}
+              {visible.by && (
+                <Line
+                  type="monotone"
+                  dataKey="by"
+                  stroke={SERIES_META.by.color}
+                  strokeWidth={senseKey === "by" ? 2.5 : 2}
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  name="By"
+                  isAnimationActive={false}
+                />
+              )}
+              {visible.bz && (
+                <Line
+                  type="monotone"
+                  dataKey="bz"
+                  stroke={SERIES_META.bz.color}
+                  strokeWidth={senseKey === "bz" ? 2.5 : 2}
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  name="Bz"
+                  isAnimationActive={false}
+                />
+              )}
+              {visible.btotal && (
+                <Line
+                  type="monotone"
+                  dataKey="btotal"
+                  stroke={SERIES_META.btotal.color}
+                  strokeWidth={2}
+                  strokeOpacity={0.85}
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  name="|B|"
+                  isAnimationActive={false}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </GraphCard>
 
       <GraphCard
         title="Device Output"
         subtitle={`vs ${xTitle} · ${partNumber ?? "sensor"} · ${supply} V${digital ? " · digital" : ""}`}
+        actions={
+          <ChartZoomControls
+            zoomed={outputZoom.zoomed}
+            onZoomIn={outputZoom.onZoomIn}
+            onZoomOut={outputZoom.onZoomOut}
+            onPanLeft={outputZoom.onPanLeft}
+            onPanRight={outputZoom.onPanRight}
+            onReset={outputZoom.onReset}
+          />
+        }
         toggles={
           <>
             <SeriesToggle
@@ -203,63 +286,82 @@ export function ResponseCharts({
           </>
         }
       >
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={dataset} syncId="hallsim" margin={CHART_MARGIN}>
-            <CartesianGrid strokeDasharray="2 4" stroke="var(--chart-grid)" />
-            <XAxis {...xAxis} />
-            <YAxis
-              yAxisId="v"
-              domain={[0, supply]}
-              {...VALUE_Y_AXIS_PROPS}
-              width={44}
-              unit=" V"
-            />
-            {visible.code && (
+        <div
+          onWheel={outputZoom.onWheel}
+          className="select-none"
+          title="Scroll to zoom · drag to select · double-click reset"
+        >
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart
+              data={dataset}
+              margin={CHART_MARGIN}
+              {...outputZoom.chartHandlers}
+            >
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--chart-grid)" />
+              <XAxis {...outputXAxis} />
               <YAxis
-                yAxisId="code"
-                orientation="right"
+                yAxisId="v"
+                domain={[0, supply]}
                 {...VALUE_Y_AXIS_PROPS}
-                width={40}
+                width={44}
+                unit=" V"
               />
-            )}
-            {sharedTooltip}
-            {playhead}
-            {vref != null && (
-              <ReferenceLine
-                yAxisId="v"
-                y={vref}
-                stroke="var(--border)"
-                strokeDasharray="4 4"
-              />
-            )}
-            {visible.vout && (
-              <Line
-                yAxisId="v"
-                type={digital ? "stepAfter" : "monotone"}
-                dataKey="vout"
-                stroke={SERIES_META.vout.color}
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 5, strokeWidth: 0 }}
-                name="Vout"
-                isAnimationActive={false}
-              />
-            )}
-            {visible.code && (
-              <Line
-                yAxisId="code"
-                type="stepAfter"
-                dataKey="code"
-                stroke={SERIES_META.code.color}
-                strokeWidth={1.5}
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 0 }}
-                name="Code"
-                isAnimationActive={false}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
+              {visible.code && (
+                <YAxis
+                  yAxisId="code"
+                  orientation="right"
+                  {...VALUE_Y_AXIS_PROPS}
+                  width={40}
+                />
+              )}
+              {sharedTooltip}
+              {playhead}
+              {outputZoom.selectRange && (
+                <ReferenceArea
+                  x1={outputZoom.selectRange[0]}
+                  x2={outputZoom.selectRange[1]}
+                  strokeOpacity={0.3}
+                  fill="var(--accent)"
+                  fillOpacity={0.12}
+                />
+              )}
+              {vref != null && (
+                <ReferenceLine
+                  yAxisId="v"
+                  y={vref}
+                  stroke="var(--border)"
+                  strokeDasharray="4 4"
+                />
+              )}
+              {visible.vout && (
+                <Line
+                  yAxisId="v"
+                  type={digital ? "stepAfter" : "monotone"}
+                  dataKey="vout"
+                  stroke={SERIES_META.vout.color}
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  name="Vout"
+                  isAnimationActive={false}
+                />
+              )}
+              {visible.code && (
+                <Line
+                  yAxisId="code"
+                  type="stepAfter"
+                  dataKey="code"
+                  stroke={SERIES_META.code.color}
+                  strokeWidth={1.5}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  name="Code"
+                  isAnimationActive={false}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </GraphCard>
 
       {showSummary && summary && (

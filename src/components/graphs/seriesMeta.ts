@@ -12,6 +12,22 @@ export const SERIES_META: Record<
   code: { label: "Code", color: "#94a3b8", unit: "" },
 };
 
+/** Digital operate / release thresholds — distinct from Bx/By/Bz series colors. */
+export const THRESHOLD_META = {
+  bop: {
+    label: "Bop",
+    fullLabel: "Operate (Bop)",
+    color: "#fb923c",
+    unit: "G",
+  },
+  brp: {
+    label: "Brp",
+    fullLabel: "Release (Brp)",
+    color: "#38bdf8",
+    unit: "G",
+  },
+} as const;
+
 export const AXIS_TICK = {
   fontFamily: "ui-monospace, monospace",
   fontSize: 13,
@@ -19,11 +35,15 @@ export const AXIS_TICK = {
 };
 
 /** Motion X axis (displacement mm or angle deg) — SRS §10. */
-export function motionXAxisProps(unit: string) {
+export function motionXAxisProps(
+  unit: string,
+  domain: [number, number] | ["dataMin", "dataMax"] = ["dataMin", "dataMax"],
+) {
   return {
     dataKey: "x" as const,
     type: "number" as const,
-    domain: ["dataMin", "dataMax"] as [string, string],
+    domain,
+    allowDataOverflow: true as const,
     tick: AXIS_TICK,
     tickLine: false,
     axisLine: false,
