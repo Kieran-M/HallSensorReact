@@ -12,7 +12,7 @@ function WorkspaceFallback() {
   return (
     <div className="h-dvh flex items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
       <div
-        className="font-mono text-[13px] uppercase tracking-widest px-4 py-3 rounded-sm"
+        className="font-mono text-sm uppercase tracking-widest px-4 py-3 rounded-sm"
         style={{
           border: "1px solid var(--border)",
           color: "var(--accent)",

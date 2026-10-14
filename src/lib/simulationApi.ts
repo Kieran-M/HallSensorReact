@@ -21,11 +21,29 @@ export interface SimulationRequest {
   supply?: number;
 }
 
-function apiBaseUrl(): string {
-  return (import.meta.env.VITE_SIMULATION_API_URL ?? "http://localhost:8000").replace(
-    /\/+$/,
-    "",
-  );
+export interface ApiHealth {
+  status: string;
+  version?: string;
+  packages?: number;
+}
+
+declare global {
+  interface Window {
+    /** Optional runtime override (set before mount; useful without rebuild). */
+    __HALLSIM_API_URL__?: string;
+  }
+}
+
+export function apiBaseUrl(): string {
+  const runtime =
+    typeof window !== "undefined" ? window.__HALLSIM_API_URL__ : undefined;
+  const fromEnv = import.meta.env.VITE_SIMULATION_API_URL as string | undefined;
+  return (runtime || fromEnv || "http://localhost:8000").replace(/\/+$/, "");
+}
+
+function networkHint(_cause: unknown): string {
+  const base = apiBaseUrl();
+  return `Can't reach the simulation API at ${base}. Is the backend running?`;
 }
 
 async function readError(response: Response, fallback: string): Promise<string> {
@@ -41,8 +59,28 @@ async function readError(response: Response, fallback: string): Promise<string> 
     : `${fallback} (${response.status}).`;
 }
 
+async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${apiBaseUrl()}${path}`, init);
+  } catch (err) {
+    throw new Error(networkHint(err));
+  }
+}
+
+export async function checkApiHealth(): Promise<ApiHealth> {
+  const response = await apiFetch("/health");
+  if (!response.ok) {
+    throw new Error(await readError(response, "API health check failed"));
+  }
+  const data: unknown = await response.json();
+  if (!data || typeof data !== "object" || !("status" in data)) {
+    throw new Error("API health response was malformed.");
+  }
+  return data as ApiHealth;
+}
+
 export async function listSensorPackages(): Promise<SensorPackageInfo[]> {
-  const response = await fetch(`${apiBaseUrl()}/sensor-packages`);
+  const response = await apiFetch("/sensor-packages");
   if (!response.ok) {
     throw new Error(await readError(response, "Failed to load sensor packages"));
   }
@@ -56,7 +94,7 @@ export async function listSensorPackages(): Promise<SensorPackageInfo[]> {
 export async function runSimulation(
   request: SimulationRequest,
 ): Promise<SimulationResult> {
-  const response = await fetch(`${apiBaseUrl()}/simulate`, {
+  const response = await apiFetch("/simulate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

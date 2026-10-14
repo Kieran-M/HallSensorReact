@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type {
   AnimationParams,
   MotionAxis,
@@ -21,11 +22,21 @@ export function MotionFields({
   animation,
   setMotionType,
   patchAnimation,
+  duration,
+  fps,
+  setDuration,
+  setFps,
 }: {
   animation: AnimationParams
   setMotionType: (type: MotionType) => void
   patchAnimation: (patch: Partial<AnimationParams>) => void
+  duration: number
+  fps: number
+  setDuration: (duration: number) => void
+  setFps: (fps: number) => void
 }) {
+  const [showOrientation, setShowOrientation] = useState(false)
+
   return (
     <>
       <SelectInput<MotionType>
@@ -33,6 +44,25 @@ export function MotionFields({
         value={animation.type}
         options={MOTION_TYPES}
         onChange={setMotionType}
+      />
+
+      <NumberInput
+        label="Duration"
+        value={duration}
+        onChange={setDuration}
+        min={0.2}
+        max={30}
+        step={0.1}
+        unit="s"
+      />
+      <NumberInput
+        label="Sample Rate"
+        value={fps}
+        onChange={(v) => setFps(Math.round(v))}
+        min={10}
+        max={120}
+        step={1}
+        unit="fps"
       />
 
       {animation.type === 'linear' && (
@@ -87,56 +117,67 @@ export function MotionFields({
             step={0.1}
             unit="mm"
           />
-          <XYZGroup
-            label="Start Angle"
-            xVal={animation.startRotation.x}
-            yVal={animation.startRotation.y}
-            zVal={animation.startRotation.z}
-            onX={(x) =>
-              patchAnimation({
-                startRotation: patchXYZ(animation.startRotation, 'x', x),
-              })
-            }
-            onY={(y) =>
-              patchAnimation({
-                startRotation: patchXYZ(animation.startRotation, 'y', y),
-              })
-            }
-            onZ={(z) =>
-              patchAnimation({
-                startRotation: patchXYZ(animation.startRotation, 'z', z),
-              })
-            }
-            min={-360}
-            max={360}
-            step={1}
-            unit="°"
-          />
-          <XYZGroup
-            label="End Angle"
-            xVal={animation.endRotation.x}
-            yVal={animation.endRotation.y}
-            zVal={animation.endRotation.z}
-            onX={(x) =>
-              patchAnimation({
-                endRotation: patchXYZ(animation.endRotation, 'x', x),
-              })
-            }
-            onY={(y) =>
-              patchAnimation({
-                endRotation: patchXYZ(animation.endRotation, 'y', y),
-              })
-            }
-            onZ={(z) =>
-              patchAnimation({
-                endRotation: patchXYZ(animation.endRotation, 'z', z),
-              })
-            }
-            min={-360}
-            max={360}
-            step={1}
-            unit="°"
-          />
+          <button
+            type="button"
+            onClick={() => setShowOrientation((v) => !v)}
+            className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)] hover:text-[var(--accent)] text-left"
+          >
+            {showOrientation ? '▾ Hide orientation' : '▸ Initial orientation'}
+          </button>
+          {showOrientation && (
+            <>
+              <XYZGroup
+                label="Start Angle"
+                xVal={animation.startRotation.x}
+                yVal={animation.startRotation.y}
+                zVal={animation.startRotation.z}
+                onX={(x) =>
+                  patchAnimation({
+                    startRotation: patchXYZ(animation.startRotation, 'x', x),
+                  })
+                }
+                onY={(y) =>
+                  patchAnimation({
+                    startRotation: patchXYZ(animation.startRotation, 'y', y),
+                  })
+                }
+                onZ={(z) =>
+                  patchAnimation({
+                    startRotation: patchXYZ(animation.startRotation, 'z', z),
+                  })
+                }
+                min={-360}
+                max={360}
+                step={1}
+                unit="°"
+              />
+              <XYZGroup
+                label="End Angle"
+                xVal={animation.endRotation.x}
+                yVal={animation.endRotation.y}
+                zVal={animation.endRotation.z}
+                onX={(x) =>
+                  patchAnimation({
+                    endRotation: patchXYZ(animation.endRotation, 'x', x),
+                  })
+                }
+                onY={(y) =>
+                  patchAnimation({
+                    endRotation: patchXYZ(animation.endRotation, 'y', y),
+                  })
+                }
+                onZ={(z) =>
+                  patchAnimation({
+                    endRotation: patchXYZ(animation.endRotation, 'z', z),
+                  })
+                }
+                min={-360}
+                max={360}
+                step={1}
+                unit="°"
+              />
+            </>
+          )}
         </>
       )}
 
@@ -263,6 +304,7 @@ export function MotionFields({
             <button
               type="button"
               role="switch"
+              aria-label="Bounce path"
               aria-checked={animation.bounce}
               onClick={() => patchAnimation({ bounce: !animation.bounce })}
               className={[

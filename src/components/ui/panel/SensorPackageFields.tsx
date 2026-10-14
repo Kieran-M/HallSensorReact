@@ -6,54 +6,24 @@ import {
   PACKAGE_OUTLINE_LABELS,
 } from "../../../lib/packageVisuals";
 import {
+  DEFAULT_SENSOR_CATALOG_FILTERS,
+  filterSensorPackages,
+  type SensorCatalogFilterState,
+} from "../../../lib/sensorCatalogFilters";
+import {
   resolveOperateSupply,
   sensitivityMvPerG,
 } from "../../../lib/sensitivityDisplay";
 import { useSimulatorStore } from "../../../store/simulatorStore";
 import type { HallType, SensorPackageInfo } from "../../../types/simulation";
 import { PackageThumb } from "./PackageThumb";
-
-type TypeFilter = "all" | HallType;
-
-const TYPE_FILTERS: { value: TypeFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "linear", label: "Linear" },
-  { value: "unipolar", label: "Unipolar" },
-  { value: "latch", label: "Latch" },
-  { value: "omnipolar", label: "Omnipolar" },
-];
-
-function normalize(text: string): string {
-  return text.toLowerCase().replace(/[\s\-_./]+/g, "");
-}
-
-function matchesQuery(pkg: SensorPackageInfo, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-
-  const qNorm = normalize(q);
-  const haystacks = [
-    pkg.partNumber,
-    pkg.id,
-    pkg.description,
-    pkg.hallType,
-    pkg.outputType,
-    pkg.packageOutline,
-    ...pkg.packages,
-    `${pkg.bopTypGauss ?? ""}`,
-    `${pkg.brpTypGauss ?? ""}`,
-  ];
-
-  if (haystacks.some((h) => h.toLowerCase().includes(q))) return true;
-  if (haystacks.some((h) => normalize(h).includes(qNorm))) return true;
-  return false;
-}
+import { SensorCatalogFilters } from "./SensorCatalogFilters";
 
 function TypeBadge({ type }: { type: HallType }) {
   const c = hallTypeColor(type);
   return (
     <span
-      className="font-mono text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm"
+      className="font-mono text-xs uppercase tracking-widest px-1.5 py-0.5 rounded-sm"
       style={{
         color: c.accent,
         backgroundColor: c.soft,
@@ -62,6 +32,28 @@ function TypeBadge({ type }: { type: HallType }) {
     >
       {c.label}
     </span>
+  );
+}
+
+export function DatasheetLink({
+  url,
+  className = "",
+}: {
+  url?: string | null;
+  className?: string;
+}) {
+  if (!url) return null;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className={`hs-datasheet-btn inline-flex items-center justify-center gap-1.5 font-mono text-xs font-semibold uppercase tracking-widest px-3 py-2 rounded-sm border no-underline ${className}`}
+    >
+      Datasheet
+      <span aria-hidden="true">↗</span>
+    </a>
   );
 }
 
@@ -74,7 +66,7 @@ function PackageMeta({
 }) {
   const sensMvG = sensitivityMvPerG(pkg, supplyV);
   return (
-    <div className="font-mono text-xs text-[var(--muted-foreground)] space-y-0.5">
+    <div className="font-mono text-sm text-[var(--muted-foreground)] space-y-0.5">
       <div>
         {PACKAGE_OUTLINE_LABELS[pkg.packageOutline]}
         {pkg.packages[0] ? ` · ${pkg.packages[0]}` : ""}
@@ -97,6 +89,9 @@ function PackageMeta({
           VDD {supplyV.toFixed(2)} V
         </div>
       )}
+      <div className="pt-1.5">
+        <DatasheetLink url={pkg.datasheetUrl} />
+      </div>
     </div>
   );
 }
@@ -120,12 +115,13 @@ function SensorCatalogModal({
 }) {
   const titleId = useId();
   const searchRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [filters, setFilters] = useState<SensorCatalogFilterState>(
+    DEFAULT_SENSOR_CATALOG_FILTERS,
+  );
 
   useEffect(() => {
     if (!open) return;
-    setQuery("");
+    setFilters(DEFAULT_SENSOR_CATALOG_FILTERS);
     const t = window.setTimeout(() => searchRef.current?.focus(), 30);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -137,12 +133,10 @@ function SensorCatalogModal({
     };
   }, [open, onClose]);
 
-  const filtered = useMemo(() => {
-    return packages.filter((pkg) => {
-      if (typeFilter !== "all" && pkg.hallType !== typeFilter) return false;
-      return matchesQuery(pkg, query);
-    });
-  }, [packages, query, typeFilter]);
+  const filtered = useMemo(
+    () => filterSensorPackages(packages, filters),
+    [packages, filters],
+  );
 
   if (!open) return null;
 
@@ -200,55 +194,15 @@ function SensorCatalogModal({
         </header>
 
         <div
-          className="shrink-0 px-4 py-3 space-y-3"
+          className="shrink-0 px-4 py-3"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
-          <div className="relative">
-            <input
-              ref={searchRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search PN, package, type, description…"
-              className="w-full rounded-sm border border-[var(--border)] bg-[var(--background)] pl-3 pr-9 py-2.5 font-mono text-[13px] text-[var(--foreground)] outline-none focus:border-[var(--accent)]/70"
-              aria-label="Search sensor catalog"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] border-0 bg-transparent cursor-pointer px-1"
-                aria-label="Clear search"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {TYPE_FILTERS.map((f) => {
-              const active = typeFilter === f.value;
-              const color =
-                f.value === "all"
-                  ? { accent: "var(--accent)", soft: "transparent" }
-                  : hallTypeColor(f.value);
-              return (
-                <button
-                  key={f.value}
-                  type="button"
-                  onClick={() => setTypeFilter(f.value)}
-                  className="font-mono text-xs uppercase tracking-widest px-2.5 py-1 rounded-sm transition-colors border"
-                  style={{
-                    borderColor: active ? color.accent : "var(--border)",
-                    color: active ? color.accent : "var(--muted-foreground)",
-                    backgroundColor: active ? color.soft : "transparent",
-                  }}
-                >
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
+          <SensorCatalogFilters
+            packages={packages}
+            filters={filters}
+            onChange={setFilters}
+            searchRef={searchRef}
+          />
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -259,7 +213,7 @@ function SensorCatalogModal({
           )}
           {!loadError && !loading && filtered.length === 0 && (
             <p className="p-6 font-mono text-xs text-[var(--muted-foreground)] text-center">
-              No sensors match “{query.trim() || typeFilter}”.
+              No sensors match these filters.
             </p>
           )}
           <ul className="p-2 grid gap-2 sm:grid-cols-2">
@@ -289,13 +243,13 @@ function SensorCatalogModal({
                     />
                     <div className="min-w-0 space-y-1 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-[13px] font-semibold text-[var(--foreground)]">
+                        <span className="font-mono text-sm font-semibold text-[var(--foreground)]">
                           {pkg.partNumber}
                         </span>
                         <TypeBadge type={pkg.hallType} />
                         {selected && (
                           <span
-                            className="font-mono text-[10px] uppercase tracking-widest"
+                            className="font-mono text-xs uppercase tracking-widest"
                             style={{ color: c.accent }}
                           >
                             Selected
@@ -331,6 +285,7 @@ export function SensorPackageFields() {
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [catalogTick, setCatalogTick] = useState(0);
   const [catalogOpen, setCatalogOpen] = useState(false);
 
   useEffect(() => {
@@ -354,7 +309,7 @@ export function SensorPackageFields() {
     return () => {
       cancelled = true;
     };
-  }, [setSensorCatalog]);
+  }, [setSensorCatalog, catalogTick]);
 
   const selected =
     packages.find((pkg) => pkg.id === sensorPackageId) ?? null;
@@ -386,10 +341,10 @@ export function SensorPackageFields() {
             <div className="min-w-0 space-y-1 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted-foreground)] mb-1">
+                  <div className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)] mb-1">
                     Selected package
                   </div>
-                  <div className="font-mono text-[13px] font-semibold text-[var(--foreground)]">
+                  <div className="font-mono text-sm font-semibold text-[var(--foreground)]">
                     {selected.partNumber}
                   </div>
                 </div>
@@ -414,7 +369,7 @@ export function SensorPackageFields() {
         <div className="space-y-1.5">
           <label
             htmlFor={vddInputId}
-            className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]"
+            className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]"
           >
             Supply VDD (V)
           </label>
@@ -431,18 +386,18 @@ export function SensorPackageFields() {
                 if (!Number.isFinite(n)) return;
                 setSupplyVdd(Math.min(24, Math.max(0.5, n)));
               }}
-              className="w-full font-mono text-[13px] rounded-sm px-2.5 py-2 bg-[var(--background)] text-[var(--foreground)] border border-[var(--border)] focus:outline-none focus:border-[var(--accent)]"
+              className="w-full font-mono text-sm rounded-sm px-2.5 py-2 bg-[var(--background)] text-[var(--foreground)] border border-[var(--border)] focus:outline-none focus:border-[var(--accent)]"
             />
             <button
               type="button"
               title="Reset to package default"
               onClick={() => setSupplyVdd(selected.supply)}
-              className="shrink-0 font-mono text-[11px] uppercase tracking-widest px-2.5 py-2 rounded-sm border border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+              className="shrink-0 font-mono text-xs uppercase tracking-widest px-2.5 py-2 rounded-sm border border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
             >
-              Def
+              Reset
             </button>
           </div>
-          <p className="font-mono text-[10px] text-[var(--muted-foreground)] leading-relaxed">
+          <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed">
             {selected.hallType === "linear"
               ? "Ratiometric parts: sensitivity scales with VDD."
               : "Sets digital output rail high level (~VDD)."}
@@ -454,7 +409,7 @@ export function SensorPackageFields() {
         type="button"
         onClick={() => setCatalogOpen(true)}
         disabled={loading && packages.length === 0 && !loadError}
-        className="w-full font-mono text-[13px] uppercase tracking-widest py-2.5 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full font-mono text-sm uppercase tracking-widest py-2.5 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         style={{
           border: `1px solid color-mix(in srgb, ${selectedColor.accent} 55%, var(--border))`,
           color: selectedColor.accent,
@@ -466,9 +421,18 @@ export function SensorPackageFields() {
       </button>
 
       {loadError && (
-        <p className="font-mono text-xs text-red-400 leading-relaxed">
-          {loadError}
-        </p>
+        <div className="space-y-2">
+          <p className="font-mono text-xs text-red-400 leading-relaxed">
+            {loadError}
+          </p>
+          <button
+            type="button"
+            onClick={() => setCatalogTick((t) => t + 1)}
+            className="font-mono text-xs uppercase tracking-widest px-2 py-1 rounded-sm border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+          >
+            Retry catalog
+          </button>
+        </div>
       )}
 
       <SensorCatalogModal

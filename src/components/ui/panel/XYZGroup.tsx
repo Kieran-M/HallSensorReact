@@ -25,7 +25,7 @@ export function XYZGroup({
 }) {
   return (
     <div>
-      <div className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)] mb-2">
+      <div className="font-mono text-xs uppercase tracking-wide text-[var(--muted-foreground)] mb-2 leading-snug">
         {label}
       </div>
       <div className="grid grid-cols-3 gap-2">

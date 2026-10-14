@@ -20,8 +20,8 @@ function applyTheme(theme: Theme) {
 function getInitialTheme(): Theme {
   const savedTheme = localStorage.getItem('hallsim-theme')
   if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme
-  // Brand default: dark (ignore OS preference on first visit)
-  return 'dark'
+  // Brand default: light (ignore OS preference on first visit)
+  return 'light'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -63,7 +63,7 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      className="group flex items-center gap-2 rounded-sm border border-[var(--border)] bg-[var(--card)] px-2.5 py-1.5 text-[var(--muted-foreground)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)] cursor-pointer"
+      className="group flex items-center gap-1.5 rounded-sm border border-[var(--border)] bg-[var(--card)] px-2 py-1.5 text-[var(--muted-foreground)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)] cursor-pointer shrink-0"
     >
       {isDark ? (
         <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -75,7 +75,7 @@ export function ThemeToggle() {
           <path d="M16.5 12.15A6.6 6.6 0 0 1 7.85 3.5 6.6 6.6 0 1 0 16.5 12.15Z" />
         </svg>
       )}
-      <span className="font-mono text-xs uppercase tracking-widest">{isDark ? 'Light' : 'Dark'}</span>
+      <span className="font-mono text-xs uppercase tracking-wide hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
     </button>
   )
 }

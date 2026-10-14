@@ -202,7 +202,7 @@ export function AxisGizmoOverlay() {
       title="Click X/Y/Z (or opposite tip) to snap; center for isometric"
     >
       <div
-        className="absolute top-1 left-1.5 z-10 font-mono text-[11px] uppercase tracking-widest pointer-events-none"
+        className="absolute top-1 left-1.5 z-10 font-mono text-xs uppercase tracking-widest pointer-events-none"
         style={{ color: "var(--muted-foreground)" }}
       >
         View

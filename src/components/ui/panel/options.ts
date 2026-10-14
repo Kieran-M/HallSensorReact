@@ -1,5 +1,14 @@
 import type { MagnetShape } from '../../../types/magnet'
 import type { MotionAxis, MotionType } from '../../../types/motion'
+import {
+  GRADE_REMANENCE_T,
+  MAGNET_MATERIALS,
+  gradesForMaterial,
+  type MagnetMaterialId,
+} from '../../../lib/magnetCatalog'
+
+export { GRADE_REMANENCE_T, gradesForMaterial }
+export type { MagnetMaterialId }
 
 export const MOTION_TYPES: { label: string; value: MotionType }[] = [
   { label: 'Linear', value: 'linear' },
@@ -13,6 +22,7 @@ export const AXES: { label: string; value: MotionAxis }[] = [
   { label: 'Z', value: 'z' },
 ]
 
+/** TIMSS / Magnet Input Parameters shapes. */
 export const SHAPES: { label: string; value: MagnetShape }[] = [
   { label: 'Bar', value: 'bar' },
   { label: 'Diametric Cylinder', value: 'diametric_cylinder' },
@@ -22,15 +32,11 @@ export const SHAPES: { label: string; value: MagnetShape }[] = [
   { label: 'Sphere', value: 'sphere' },
 ]
 
-export const MATERIALS = [
-  { label: 'NdFeB', value: 'NdFeB' },
-  { label: 'SmCo', value: 'SmCo' },
-  { label: 'Ferrite', value: 'Ferrite' },
-  { label: 'AlNiCo', value: 'AlNiCo' },
-]
+export const MATERIALS: { label: string; value: MagnetMaterialId }[] =
+  MAGNET_MATERIALS.map((m) => ({ label: m.label, value: m.id }))
 
-export const GRADES = [
-  { label: 'N35', value: 'N35' },
-  { label: 'N42', value: 'N42' },
-  { label: 'N52', value: 'N52' },
-]
+/** All grades across materials (legacy flat list). Prefer gradesForMaterial(). */
+export const GRADES: { label: string; value: string }[] =
+  MAGNET_MATERIALS.flatMap((m) =>
+    m.grades.map((g) => ({ label: `${g.label}`, value: g.id })),
+  )

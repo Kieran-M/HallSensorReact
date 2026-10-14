@@ -3,6 +3,20 @@
 import type { MagnetShape } from "../../../types/magnet";
 import type { MotionType } from "../../../types/motion";
 
+/** Tip of an arm at SVG angle (deg, clockwise from +X, Y-down). */
+function armTip(
+  pivotX: number,
+  pivotY: number,
+  arm: number,
+  deg: number,
+): { x: number; y: number } {
+  const a = (deg * Math.PI) / 180;
+  return {
+    x: pivotX + arm * Math.cos(a),
+    y: pivotY + arm * Math.sin(a),
+  };
+}
+
 export function MotionPreview({ type }: { type: MotionType }) {
   if (type === "linear") {
     return (
@@ -32,28 +46,6 @@ export function MotionPreview({ type }: { type: MotionType }) {
           />
           <rect x="56" y="18" width="22" height="12" rx="1.5" fill="#c0392b" />
           <rect x="78" y="18" width="22" height="12" rx="1.5" fill="#2980b9" />
-          <text
-            x="67"
-            y="27"
-            textAnchor="middle"
-            fontSize="7"
-            fill="white"
-            fontFamily="monospace"
-            fontWeight="bold"
-          >
-            N
-          </text>
-          <text
-            x="89"
-            y="27"
-            textAnchor="middle"
-            fontSize="7"
-            fill="white"
-            fontFamily="monospace"
-            fontWeight="bold"
-          >
-            S
-          </text>
         </g>
       </svg>
     );
@@ -103,68 +95,71 @@ export function MotionPreview({ type }: { type: MotionType }) {
             stroke="rgba(255,255,255,0.35)"
             strokeWidth="0.7"
           />
-          <text
-            x={cx - r * 0.4}
-            y={cy + 2.5}
-            textAnchor="middle"
-            fontSize="7"
-            fill="white"
-            fontFamily="monospace"
-            fontWeight="bold"
-          >
-            N
-          </text>
-          <text
-            x={cx + r * 0.4}
-            y={cy + 2.5}
-            textAnchor="middle"
-            fontSize="7"
-            fill="white"
-            fontFamily="monospace"
-            fontWeight="bold"
-          >
-            S
-          </text>
         </g>
       </svg>
     );
   }
 
-  // hinge
+  // Hinge / arc — ghost arc uses the same angles as the animated arm.
+  // Matches DEFAULT_HINGE sweep (35° → 0°), drawn CCW in SVG (negative angles).
+  const pivotX = 40;
+  const pivotY = 52;
+  const arm = 70;
+  const startDeg = -35;
+  const endDeg = 0;
+  const start = armTip(pivotX, pivotY, arm, startDeg);
+  const end = armTip(pivotX, pivotY, arm, endDeg);
+  const sweep = endDeg > startDeg ? 1 : 0;
+
   return (
     <svg viewBox="0 0 160 72" className="w-full h-16" aria-hidden>
-      <circle cx="36" cy="48" r="3" fill="var(--muted-foreground)" />
-      <rect x="112" y="44" width="22" height="8" rx="1" fill="#1a3a2a" />
-      <rect x="118" y="39" width="10" height="6" rx="0.5" fill="#111" />
-      <circle cx="123" cy="37" r="2" fill="var(--accent)" opacity="0.9" />
+      <circle cx={pivotX} cy={pivotY} r="3" fill="var(--muted-foreground)" />
+      <rect x="118" y="44" width="22" height="8" rx="1" fill="#1a3a2a" />
+      <rect x="124" y="39" width="10" height="6" rx="0.5" fill="#111" />
+      <circle cx="129" cy="37" r="2" fill="var(--accent)" opacity="0.9" />
       <path
-        d="M 36 48 A 70 70 0 0 1 120 48"
+        d={`M ${start.x} ${start.y} A ${arm} ${arm} 0 0 ${sweep} ${end.x} ${end.y}`}
         fill="none"
         stroke="var(--accent)"
-        strokeWidth="0.6"
+        strokeWidth="0.7"
         strokeDasharray="3 3"
-        opacity="0.3"
+        opacity="0.45"
       />
       <g>
         <animateTransform
           attributeName="transform"
           type="rotate"
-          values="-55 36 48; 5 36 48; -55 36 48"
+          values={`${startDeg} ${pivotX} ${pivotY}; ${endDeg} ${pivotX} ${pivotY}; ${startDeg} ${pivotX} ${pivotY}`}
           dur="2.2s"
           repeatCount="indefinite"
           calcMode="spline"
           keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
         />
         <line
-          x1="36"
-          y1="48"
-          x2="108"
-          y2="48"
+          x1={pivotX}
+          y1={pivotY}
+          x2={pivotX + arm - 10}
+          y2={pivotY}
           stroke="var(--muted-foreground)"
           strokeWidth="1.8"
+          strokeLinecap="round"
         />
-        <rect x="94" y="40" width="22" height="10" rx="1.5" fill="#c0392b" />
-        <rect x="105" y="40" width="11" height="10" rx="1.5" fill="#2980b9" />
+        <rect
+          x={pivotX + arm - 28}
+          y={pivotY - 6}
+          width="22"
+          height="12"
+          rx="1.5"
+          fill="#c0392b"
+        />
+        <rect
+          x={pivotX + arm - 17}
+          y={pivotY - 6}
+          width="11"
+          height="12"
+          rx="1.5"
+          fill="#2980b9"
+        />
       </g>
     </svg>
   );
@@ -178,28 +173,6 @@ export function MagnetShapePreview({ shape }: { shape: MagnetShape }) {
       <svg viewBox="0 0 120 56" className="w-full h-14" aria-hidden>
         <rect x="18" y="18" width="42" height="20" rx="2" fill="#c0392b" />
         <rect x="60" y="18" width="42" height="20" rx="2" fill="#2980b9" />
-        <text
-          x="39"
-          y="32"
-          textAnchor="middle"
-          fontSize="9"
-          fill="white"
-          fontFamily="monospace"
-          fontWeight="bold"
-        >
-          N
-        </text>
-        <text
-          x="81"
-          y="32"
-          textAnchor="middle"
-          fontSize="9"
-          fill="white"
-          fontFamily="monospace"
-          fontWeight="bold"
-        >
-          S
-        </text>
       </svg>
     );
   }
@@ -209,28 +182,6 @@ export function MagnetShapePreview({ shape }: { shape: MagnetShape }) {
       <svg viewBox="0 0 120 56" className="w-full h-14" aria-hidden>
         <ellipse cx="60" cy="28" rx="28" ry="16" fill="#c0392b" />
         <path d="M 60 12 A 28 16 0 0 1 60 44 Z" fill="#2980b9" />
-        <text
-          x="44"
-          y="31"
-          textAnchor="middle"
-          fontSize="8"
-          fill="white"
-          fontFamily="monospace"
-          fontWeight="bold"
-        >
-          N
-        </text>
-        <text
-          x="76"
-          y="31"
-          textAnchor="middle"
-          fontSize="8"
-          fill="white"
-          fontFamily="monospace"
-          fontWeight="bold"
-        >
-          S
-        </text>
       </svg>
     );
   }

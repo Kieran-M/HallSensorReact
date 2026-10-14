@@ -133,6 +133,7 @@ interface SimulatorStore {
   setPlaybackSpeed: (speed: number) => void;
 
   setDuration: (duration: number) => void;
+  setFps: (fps: number) => void;
   setSimulating: (simulating: boolean) => void;
   setSimulationError: (error: string | null) => void;
   setSimulationResult: (result: SimulationResult) => void;
@@ -159,7 +160,7 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     set((state) => ({
       magnet: {
         ...SHAPE_DEFAULTS[shape],
-        poles: state.magnet.poles,
+        poles: 2,
         material: state.magnet.material,
         materialGrade: state.magnet.materialGrade,
         remanence: state.magnet.remanence,
@@ -170,7 +171,12 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     })),
 
   setMagnetParam: (key, value) =>
-    set((state) => ({ magnet: { ...state.magnet, [key]: value } })),
+    set((state) => ({
+      magnet: {
+        ...state.magnet,
+        [key]: key === "poles" ? 2 : value,
+      },
+    })),
 
   setAnimation: (animation) => set({ animation }),
 
@@ -217,7 +223,7 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     const preset = getPreset(presetId);
     if (!preset) return false;
     set({
-      magnet: preset.magnet,
+      magnet: { ...preset.magnet, poles: 2 },
       sensor: preset.sensor,
       animation: preset.animation,
       duration: preset.duration,
@@ -319,6 +325,7 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     }),
 
   setDuration: (duration) => set({ duration }),
+  setFps: (fps) => set({ fps: Math.max(1, Math.round(fps)) }),
 
   mode: "edit",
 

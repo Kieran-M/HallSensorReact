@@ -34,7 +34,7 @@ export function ChartTooltip({
       }}
     >
       <div
-        className="font-mono text-[13px] uppercase tracking-widest mb-1.5"
+        className="font-mono text-sm uppercase tracking-widest mb-1.5"
         style={{ color: "var(--accent)" }}
       >
         {xVal} {xUnit}
@@ -92,7 +92,7 @@ export function SeriesToggle({
       onClick={onToggle}
       aria-pressed={active}
       title={active ? `Hide ${meta.label}` : `Show ${meta.label}`}
-      className="inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[13px] uppercase tracking-widest transition-all hover:opacity-100 hover:brightness-110"
+      className="inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-xs uppercase tracking-wide transition-all hover:opacity-100 hover:brightness-110"
       style={{
         border: "1px solid",
         borderColor: active ? meta.color : "var(--border)",
@@ -125,7 +125,7 @@ export function ThresholdKey({
   const meta = THRESHOLD_META[kind];
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[13px] uppercase tracking-widest"
+      className="inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-xs tracking-wide"
       title={`${meta.fullLabel}: ${valueGauss} G`}
       style={{
         border: "1px solid",
@@ -136,13 +136,18 @@ export function ThresholdKey({
     >
       <span
         aria-hidden
-        className="inline-block w-3.5 h-[2px]"
+        className="inline-block w-3.5 h-[2px] shrink-0"
         style={{
           background: `repeating-linear-gradient(90deg, ${meta.color} 0 3px, transparent 3px 5px)`,
         }}
       />
-      <span style={{ color: meta.color }}>{meta.label}</span>
-      <span style={{ color: "var(--muted-foreground)", letterSpacing: "0.04em" }}>
+      <span className="uppercase" style={{ color: meta.color }}>
+        {meta.label}
+      </span>
+      <span
+        className="tabular-nums normal-case"
+        style={{ color: "var(--muted-foreground)" }}
+      >
         {valueGauss.toFixed(Number.isInteger(valueGauss) ? 0 : 1)} G
       </span>
     </span>
@@ -165,8 +170,8 @@ export function ThresholdLineLabel({
   const x = (viewBox?.x ?? 0) + (viewBox?.width ?? 0) - 6;
   const y = (viewBox?.y ?? 0) + offsetY;
   const text = `${meta.label} ${valueGauss.toFixed(Number.isInteger(valueGauss) ? 0 : 1)} G`;
-  const w = Math.max(72, text.length * 6.4 + 14);
-  const h = 16;
+  const w = Math.max(78, text.length * 7.2 + 16);
+  const h = 18;
   return (
     <g transform={`translate(${x - w}, ${y - h - 2})`} style={{ pointerEvents: "none" }}>
       <rect
@@ -214,22 +219,26 @@ export function GraphCard({
         backgroundColor: "var(--background)",
       }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between min-w-0">
+        <div className="min-w-0 flex-1">
           <div
-            className="font-mono text-[13px] uppercase tracking-widest"
+            className="font-mono text-[12px] uppercase tracking-wide truncate"
             style={{ color: "var(--accent)" }}
+            title={title}
           >
             {title}
           </div>
           <div
-            className="font-mono text-[13px] mt-0.5"
+            className="font-mono text-xs mt-0.5 leading-snug break-words"
             style={{ color: "var(--muted-foreground)" }}
+            title={subtitle}
           >
             {subtitle}
           </div>
         </div>
-        {actions}
+        {actions ? (
+          <div className="shrink-0 max-w-full">{actions}</div>
+        ) : null}
       </div>
       {toggles && <div className="flex flex-wrap gap-1.5">{toggles}</div>}
       {children}
@@ -253,7 +262,7 @@ export function ChartZoomControls({
   onReset: () => void;
 }) {
   const btn =
-    "font-mono text-[11px] uppercase tracking-widest px-2 py-1 rounded-sm border transition-colors disabled:opacity-35 disabled:cursor-not-allowed";
+    "font-mono text-xs uppercase tracking-wide px-1.5 py-1 rounded-sm border transition-colors disabled:opacity-35 disabled:cursor-not-allowed";
   const style = {
     borderColor: "var(--border)",
     color: "var(--muted-foreground)",
@@ -261,17 +270,17 @@ export function ChartZoomControls({
   } as const;
 
   return (
-    <div className="flex flex-wrap items-center gap-1 shrink-0" role="group" aria-label="Chart zoom">
-      <button type="button" className={btn} style={style} onClick={onPanLeft} disabled={!zoomed} title="Pan left">
+    <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Chart zoom">
+      <button type="button" className={btn} style={style} onClick={onPanLeft} disabled={!zoomed} title="Pan left" aria-label="Pan left">
         ←
       </button>
-      <button type="button" className={btn} style={style} onClick={onZoomOut} title="Zoom out">
+      <button type="button" className={btn} style={style} onClick={onZoomOut} title="Zoom out" aria-label="Zoom out">
         −
       </button>
-      <button type="button" className={btn} style={style} onClick={onZoomIn} title="Zoom in">
+      <button type="button" className={btn} style={style} onClick={onZoomIn} title="Zoom in" aria-label="Zoom in">
         +
       </button>
-      <button type="button" className={btn} style={style} onClick={onPanRight} disabled={!zoomed} title="Pan right">
+      <button type="button" className={btn} style={style} onClick={onPanRight} disabled={!zoomed} title="Pan right" aria-label="Pan right">
         →
       </button>
       <button
@@ -287,6 +296,7 @@ export function ChartZoomControls({
         onClick={onReset}
         disabled={!zoomed}
         title="Reset zoom"
+        aria-label="Reset zoom"
       >
         Reset
       </button>

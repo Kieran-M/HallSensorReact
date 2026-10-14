@@ -19,6 +19,18 @@ export function GeometryFields({
     (v: number) =>
       setMagnetParam(key, v as MagnetParams[K])
 
+  const remanenceField = (
+    <NumberInput
+      label="Remanence Br"
+      value={magnet.remanence}
+      onChange={p('remanence')}
+      min={0.05}
+      max={1.6}
+      step={0.01}
+      unit="T"
+    />
+  )
+
   switch (magnet.shape) {
     case 'diametric_cylinder':
     case 'axial_cylinder':
@@ -42,6 +54,7 @@ export function GeometryFields({
             step={0.1}
             unit="mm"
           />
+          {remanenceField}
         </>
       )
     case 'ring':
@@ -75,6 +88,7 @@ export function GeometryFields({
             step={0.1}
             unit="mm"
           />
+          {remanenceField}
         </>
       )
     case 'bar':
@@ -107,19 +121,23 @@ export function GeometryFields({
             step={0.1}
             unit="mm"
           />
+          {remanenceField}
         </>
       )
     case 'sphere':
       return (
-        <NumberInput
-          label="Diameter"
-          value={magnet.diameter}
-          onChange={p('diameter' as keyof MagnetParams)}
-          min={0.01}
-          max={500}
-          step={0.1}
-          unit="mm"
-        />
+        <>
+          <NumberInput
+            label="Diameter"
+            value={magnet.diameter}
+            onChange={p('diameter' as keyof MagnetParams)}
+            min={0.01}
+            max={500}
+            step={0.1}
+            unit="mm"
+          />
+          {remanenceField}
+        </>
       )
   }
 }

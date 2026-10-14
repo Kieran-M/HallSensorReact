@@ -8,13 +8,18 @@ import {
 } from "../../types/simulation";
 import { useShallow } from "zustand/shallow";
 import {
+  chartXLabel,
   chartXModeForMotion,
   chartXUnit,
   type FieldSample,
 } from "../../lib/fieldMath";
 import { ChartTooltip } from "./ChartPrimitives";
+import { ExportButtons } from "./ExportButtons";
+import { PositionRunner } from "./PositionRunner";
 import { ResponseCharts } from "./ResponseCharts";
 import type { SeriesKey } from "./seriesMeta";
+import { resolveOperateSupply } from "../../lib/sensitivityDisplay";
+import type { SimulationExportContext } from "../../lib/exportSimulation";
 
 interface GraphPanelProps {
   dataset: FieldSample[];
@@ -36,22 +41,55 @@ function defaultVisibility(
 }
 
 export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
-  const { playing, currentFrame, currentTime, frameCount, motionType } =
-    useSimulatorStore(
-      useShallow((s) => ({
-        playing: s.playing,
-        currentFrame: s.currentFrame,
-        currentTime: s.currentTime,
-        frameCount: s.simulation?.frames.length ?? 0,
-        motionType: s.animation.type,
-      })),
-    );
+  const {
+    playing,
+    currentFrame,
+    frameCount,
+    motionType,
+    fps,
+    duration,
+    magnet,
+    animation,
+    supplyVdd,
+    presetLabel,
+  } = useSimulatorStore(
+    useShallow((s) => ({
+      playing: s.playing,
+      currentFrame: s.currentFrame,
+      frameCount: s.simulation?.frames.length ?? 0,
+      motionType: s.animation.type,
+      fps: s.simulation?.fps ?? s.fps,
+      duration: s.simulation?.duration ?? s.duration,
+      magnet: s.magnet,
+      animation: s.animation,
+      supplyVdd: s.supplyVdd,
+      presetLabel: s.activePreset?.label ?? null,
+    })),
+  );
 
   const { setCurrentFrame, pause } = useSimulatorStore.getState();
   const digital = isDigitalHall(sensorPackage);
   const sensingAxis: SensingAxis = sensorPackage?.sensingAxis ?? "z";
   const xMode = chartXModeForMotion(motionType);
   const xUnit = chartXUnit(xMode);
+  const supply = sensorPackage
+    ? resolveOperateSupply(sensorPackage, supplyVdd)
+    : 5;
+
+  const exportContext: SimulationExportContext | null =
+    dataset.length > 0 && sensorPackage
+      ? {
+          dataset,
+          sensorPackage,
+          xMode,
+          fps,
+          duration,
+          magnet,
+          animation,
+          supplyV: supply,
+          presetLabel,
+        }
+      : null;
 
   const [visible, setVisible] = useState<Record<SeriesKey, boolean>>(() =>
     defaultVisibility(sensingAxis, digital),
@@ -64,7 +102,6 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
 
   const lastFrame = Math.max(frameCount - 1, 0);
   const done = !playing && currentFrame >= lastFrame && dataset.length > 0;
-  const supply = sensorPackage?.supply ?? 5;
   const vref = sensorPackage?.vref ?? (digital ? null : supply / 2);
 
   const liveIdx = dataset.length
@@ -140,8 +177,13 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
           </div>
           {sensorPackage && (
             <div
-              className="font-mono text-xs mt-1"
+              className="font-mono text-xs mt-1 truncate"
               style={{ color: "var(--muted-foreground)" }}
+              title={`${sensorPackage.partNumber} · ${sensorPackage.hallType}${
+                digital && sensorPackage.bopTypGauss != null
+                  ? ` · Bop ${sensorPackage.bopTypGauss} G`
+                  : ` · sense ${sensingAxis.toUpperCase()}`
+              }`}
             >
               {sensorPackage.partNumber} · {sensorPackage.hallType}
               {digital &&
@@ -152,67 +194,66 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
           )}
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <span
-              className="font-mono text-xs uppercase tracking-widest"
-              style={{ color: "var(--muted-foreground)" }}
-            >
-              Position runner
-            </span>
-            <span
-              className="font-mono text-[13px]"
-              style={{ color: "var(--foreground)" }}
-            >
-              fr {Math.round(currentFrame)} / {lastFrame}
-              <span style={{ color: "var(--muted-foreground)" }}>
-                {" "}
-                ·{" "}
-                {liveRow
-                  ? `${playheadX.toFixed(xUnit === "deg" ? 1 : 2)} ${xUnit}`
-                  : `${currentTime.toFixed(3)} s`}
-              </span>
-            </span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={lastFrame || 0}
-            step={1}
-            value={Math.min(Math.round(currentFrame), lastFrame)}
-            disabled={dataset.length === 0}
-            onChange={(e) => seek(Number(e.target.value))}
-            className="hs-scrubber"
-            aria-label="Scrub simulation position"
+        <ExportButtons context={exportContext} />
+
+        {dataset.length > 0 ? (
+          <PositionRunner
+            dataset={dataset}
+            currentFrame={currentFrame}
+            lastFrame={lastFrame}
+            xUnit={xUnit}
+            xLabel={chartXLabel(xMode)}
+            playing={playing}
+            sensingAxis={sensingAxis}
+            digital={digital}
+            onSeek={seek}
           />
-          <p
-            className="font-mono text-xs leading-relaxed"
-            style={{ color: "var(--muted-foreground)" }}
-          >
-            Drag to seek · charts use {xUnit === "deg" ? "angle" : "displacement"}{" "}
-            · field defaults to sense axis {sensingAxis.toUpperCase()}
-          </p>
-        </div>
+        ) : null}
       </div>
 
       <div className="p-4 space-y-4 overflow-y-auto flex-1 min-h-0">
-        <ResponseCharts
-          dataset={dataset}
-          xMode={xMode}
-          visible={visible}
-          onToggle={toggle}
-          sharedTooltip={sharedTooltip}
-          playhead={playhead}
-          partNumber={sensorPackage?.partNumber}
-          supply={supply}
-          vref={vref}
-          digital={digital}
-          bopGauss={digital ? (sensorPackage?.bopTypGauss ?? null) : null}
-          brpGauss={digital ? (sensorPackage?.brpTypGauss ?? null) : null}
-          sensingAxis={sensingAxis}
-          summary={summary}
-          showSummary={done}
-        />
+        {dataset.length === 0 ? (
+          <div
+            className="rounded-sm p-6 flex flex-col items-center justify-center gap-2 text-center min-h-[16rem]"
+            style={{
+              border: "1px dashed var(--border)",
+              backgroundColor:
+                "color-mix(in srgb, var(--background) 70%, transparent)",
+            }}
+          >
+            <div
+              className="font-mono text-xs uppercase tracking-widest"
+              style={{ color: "var(--accent)" }}
+            >
+              No simulation yet
+            </div>
+            <p
+              className="font-mono text-sm leading-relaxed max-w-xs"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              Run Simulate to plot magnetic field and device output vs{" "}
+              {xUnit === "deg" ? "magnet angle" : "displacement"}.
+            </p>
+          </div>
+        ) : (
+          <ResponseCharts
+            dataset={dataset}
+            xMode={xMode}
+            visible={visible}
+            onToggle={toggle}
+            sharedTooltip={sharedTooltip}
+            playhead={playhead}
+            partNumber={sensorPackage?.partNumber}
+            supply={supply}
+            vref={vref}
+            digital={digital}
+            bopGauss={digital ? (sensorPackage?.bopTypGauss ?? null) : null}
+            brpGauss={digital ? (sensorPackage?.brpTypGauss ?? null) : null}
+            sensingAxis={sensingAxis}
+            summary={summary}
+            showSummary={done}
+          />
+        )}
       </div>
     </aside>
   );

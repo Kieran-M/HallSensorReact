@@ -128,7 +128,7 @@ export function DesignView({ active = true }: DesignViewProps) {
         {simulating && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div
-              className="font-mono text-[13px] uppercase tracking-widest px-3 py-2 rounded-sm backdrop-blur-sm"
+              className="font-mono text-sm uppercase tracking-widest px-3 py-2 rounded-sm backdrop-blur-sm"
               style={{
                 color: "var(--accent)",
                 border: "1px solid var(--border)",
@@ -184,8 +184,8 @@ export function DesignView({ active = true }: DesignViewProps) {
               </div>
             </div>
             <div className="bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
-              <span className="font-mono text-[10px] text-(--muted-foreground) leading-relaxed">
-                B-field from Magpylib · idealised magnet model
+              <span className="font-mono text-xs text-(--muted-foreground) leading-relaxed">
+                Idealised magnet field model
               </span>
             </div>
           </div>
@@ -195,8 +195,8 @@ export function DesignView({ active = true }: DesignViewProps) {
       {isResults && (
         <div className="absolute bottom-4 left-4 z-[3] pointer-events-none">
           <div className="bg-(--background)/70 px-2 py-1 rounded-sm backdrop-blur-sm">
-            <span className="font-mono text-[10px] text-(--muted-foreground)">
-              B-field from Magpylib · idealised magnet model
+            <span className="font-mono text-xs text-(--muted-foreground)">
+              Idealised magnet field model
             </span>
           </div>
         </div>

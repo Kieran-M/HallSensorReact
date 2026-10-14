@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 interface AccordionProps {
   title: string;
@@ -9,15 +9,20 @@ interface AccordionProps {
 
 /** Collapsible section used by the design side panel. */
 export function Accordion({ title, open, onToggle, children }: AccordionProps) {
+  const panelId = useId();
+  const buttonId = useId();
+
   return (
     <div className="border border-[var(--border)] rounded-sm overflow-hidden">
       <button
         type="button"
+        id={buttonId}
         onClick={onToggle}
         aria-expanded={open}
+        aria-controls={panelId}
         className="w-full flex items-center justify-between px-4 py-3 bg-[var(--muted)]/30 hover:bg-[var(--muted)]/60 transition-colors"
       >
-        <span className="font-mono text-[13px] uppercase tracking-widest text-[var(--accent)]">
+        <span className="font-mono text-sm font-semibold uppercase tracking-widest text-[var(--accent)]">
           {title}
         </span>
         <svg
@@ -34,7 +39,12 @@ export function Accordion({ title, open, onToggle, children }: AccordionProps) {
         </svg>
       </button>
       {open && (
-        <div className="px-4 py-4 space-y-3 border-t border-[var(--border)]">
+        <div
+          id={panelId}
+          role="region"
+          aria-labelledby={buttonId}
+          className="px-4 py-4 space-y-3 border-t border-[var(--border)]"
+        >
           {children}
         </div>
       )}

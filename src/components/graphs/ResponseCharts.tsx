@@ -278,11 +278,13 @@ export function ResponseCharts({
               active={visible.vout}
               onToggle={() => onToggle("vout")}
             />
-            <SeriesToggle
-              seriesKey="code"
-              active={visible.code}
-              onToggle={() => onToggle("code")}
-            />
+            {digital && (
+              <SeriesToggle
+                seriesKey="code"
+                active={visible.code}
+                onToggle={() => onToggle("code")}
+              />
+            )}
           </>
         }
       >
@@ -346,7 +348,7 @@ export function ResponseCharts({
                   isAnimationActive={false}
                 />
               )}
-              {visible.code && (
+              {digital && visible.code && (
                 <Line
                   yAxisId="code"
                   type="stepAfter"

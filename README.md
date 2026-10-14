@@ -5,7 +5,7 @@ Vite + React + Three.js frontend for the Hall sensor simulator.
 ## Requirements
 
 - Node.js **20+** (24 recommended; see `.nvmrc`)
-- npm 10+ (comes with Node)
+- npm 10+
 
 Companion API: `../HallSensorBackend` (must be running for Simulate).
 
@@ -13,58 +13,43 @@ Companion API: `../HallSensorBackend` (must be running for Simulate).
 
 ```bash
 cd HallSensorReact
-cp .env.example .env   # optional; defaults already point at localhost:8000
-npm ci                 # clean install from package-lock.json
+cp .env.example .env   # optional; defaults to http://localhost:8000
+npm ci
 ```
-
-If `npm ci` fails because the lockfile was regenerated locally, use `npm install` once, commit the updated `package-lock.json`, then prefer `npm ci` thereafter.
 
 ## Scripts
 
 ```bash
-npm run dev       # Vite at http://localhost:5173
-npm run build     # production ESM chunks -> dist/
-npm run preview   # serve dist/
-npm run lint      # ESLint
+npm run dev        # http://localhost:5173
+npm run build      # production → dist/
+npm run preview    # serve dist/
+npm run lint
+npm run typecheck
 ```
 
-Typecheck (project references):
+## Local full stack
 
-```bash
-npx tsc --noEmit -p tsconfig.app.json
-```
-
-## Host-site embed (ESM)
-
-HallSim is built as **portable ESM** (`base: './'`) and does **not** use the browser History API or a URL router. In-app screens (presets / design / results) are Zustand view state only, so the parent diodes.com page keeps ownership of navigation.
-
-After `npm run build`:
-
-- Standalone: open `dist/index.html` (or host the `dist/` folder)
-- Embed API: import the generated `dist/assets/embed-*.js` entry:
-
-```js
-import { mountHallSim } from "./assets/embed-XXXXXXXX.js";
-
-const host = document.getElementById("hallsim-root");
-const { unmount } = mountHallSim(host);
-
-// when leaving the page / tearing down the widget:
-// unmount();
-```
-
-Serve `dist/` (including hashed `assets/*` chunks) from the same origin/path prefix the embed script uses, so relative chunk imports resolve.
-
-Heavy 3D / chart code is code-split and only fetched when the user enters the design workspace (or custom setup). Hovering “Open Design” / “Start custom setup” prefetches those chunks.
+1. Backend: `uvicorn app.main:app --reload --port 8000` in `HallSensorBackend`
+2. `npm run dev` here
+3. Open http://localhost:5173 — header should show **API Ready**
 
 ## Environment
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `VITE_SIMULATION_API_URL` | `http://localhost:8000` | Backend origin for `/simulate` |
+| `VITE_SIMULATION_API_URL` | `http://localhost:8000` | Backend origin (`/simulate`, `/sensor-packages`, `/health`) |
 
-## Local full stack
+Optional runtime override (no rebuild): `window.__HALLSIM_API_URL__ = "https://…"`.
 
-1. Start the backend (`uvicorn app.main:app --reload --port 8000` in `HallSensorBackend`)
-2. `npm run dev` in this repo
-3. Open http://localhost:5173
+## Embed (ESM)
+
+Built with `base: './'` and no History router — views are Zustand state only. After `npm run build`, import the hashed entry from `dist/assets/` (filename includes a content hash, e.g. `index-AbCdEfGh.js` — check `dist/index.html` for the exact name):
+
+```js
+import { mountHallSim } from "./assets/<built-entry>.js";
+const { unmount } = mountHallSim(document.getElementById("hallsim-root"));
+```
+
+## Phase 1 coverage
+
+Linear Sens(VDD), digital Bop/Brp, Chart 2/3, VDD UI, ah49f / ah1711 presets, custom setup, catalog, playback / gizmo / chart zoom, embed-safe ESM.

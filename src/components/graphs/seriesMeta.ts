@@ -51,11 +51,11 @@ export function motionXAxisProps(
     label: {
       value: unit === "deg" ? "Magnet Angle (deg)" : "Magnet Displacement (mm)",
       position: "insideBottom" as const,
-      offset: -2,
+      offset: -6,
       style: {
         fill: "var(--muted-foreground)",
         fontFamily: "ui-monospace, monospace",
-        fontSize: 11,
+        fontSize: 10,
       },
     },
   };
@@ -79,4 +79,4 @@ export const VALUE_Y_AXIS_PROPS = {
   axisLine: false,
 };
 
-export const CHART_MARGIN = { top: 8, right: 12, left: 0, bottom: 18 };
+export const CHART_MARGIN = { top: 10, right: 14, left: 4, bottom: 32 };

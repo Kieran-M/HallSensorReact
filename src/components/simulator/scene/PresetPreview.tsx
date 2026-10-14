@@ -28,31 +28,14 @@ function SensorChip({
   );
 }
 
-function Caption({ children }: { children: string }) {
-  return (
-    <text
-      x="60"
-      y="86"
-      textAnchor="middle"
-      fontSize="6"
-      fill="var(--muted-foreground)"
-      fontFamily="monospace"
-    >
-      {children}
-    </text>
-  );
-}
-
-/** Flat diametric disc: clean N/S semicircles (top-down). */
+/** Flat diametric disc: semicircle poles (top-down). */
 function DiametricDisc({ cx, cy, r }: { cx: number; cy: number; r: number }) {
   return (
     <g>
-      {/* South half */}
       <path
         d={`M ${cx} ${cy - r} A ${r} ${r} 0 0 1 ${cx} ${cy + r} Z`}
         fill="#2980b9"
       />
-      {/* North half */}
       <path
         d={`M ${cx} ${cy - r} A ${r} ${r} 0 0 0 ${cx} ${cy + r} Z`}
         fill="#c0392b"
@@ -73,28 +56,6 @@ function DiametricDisc({ cx, cy, r }: { cx: number; cy: number; r: number }) {
         stroke="rgba(255,255,255,0.35)"
         strokeWidth="0.7"
       />
-      <text
-        x={cx - r * 0.42}
-        y={cy + 2.5}
-        textAnchor="middle"
-        fontSize="7"
-        fill="white"
-        fontFamily="monospace"
-        fontWeight="bold"
-      >
-        N
-      </text>
-      <text
-        x={cx + r * 0.42}
-        y={cy + 2.5}
-        textAnchor="middle"
-        fontSize="7"
-        fill="white"
-        fontFamily="monospace"
-        fontWeight="bold"
-      >
-        S
-      </text>
     </g>
   );
 }
@@ -179,7 +140,6 @@ export function DynamicPreview({ id }: { id: string }) {
           strokeDasharray="2 2"
           opacity="0.45"
         />
-        <Caption>360° spin</Caption>
       </svg>
     );
   }
@@ -210,7 +170,6 @@ export function DynamicPreview({ id }: { id: string }) {
           />
           <AxialCylinderSide cx={60} top={22} w={16} h={14} uid="pv-slide-cyl" />
         </g>
-        <Caption>lateral slide-by</Caption>
       </svg>
     );
   }
@@ -267,7 +226,6 @@ export function DynamicPreview({ id }: { id: string }) {
             strokeWidth="0.5"
           />
         </g>
-        <Caption>ring rotation</Caption>
       </svg>
     );
   }
@@ -298,7 +256,6 @@ export function DynamicPreview({ id }: { id: string }) {
           />
           <AxialCylinderSide cx={60} top={12} w={22} h={16} uid="pv-head-cyl" />
         </g>
-        <Caption>axial approach</Caption>
       </svg>
     );
   }
@@ -307,19 +264,28 @@ export function DynamicPreview({ id }: { id: string }) {
     const pivotX = 28;
     const pivotY = 58;
     const arm = 48;
+    // Match magnet swing: −35° → 0° (SVG clockwise-positive, Y-down).
+    const startDeg = -35;
+    const endDeg = 0;
+    const tip = (deg: number) => {
+      const a = (deg * Math.PI) / 180;
+      return {
+        x: pivotX + arm * Math.cos(a),
+        y: pivotY + arm * Math.sin(a),
+      };
+    };
+    const a0 = tip(startDeg);
+    const a1 = tip(endDeg);
+    const sweep = endDeg > startDeg ? 1 : 0;
     return (
       <svg viewBox="0 0 120 90" className="w-full h-20" aria-hidden>
-        {/* Arc guide ~35° */}
         <path
-          d={`M ${pivotX + arm} ${pivotY}
-              A ${arm} ${arm} 0 0 0 ${pivotX + arm * Math.cos((35 * Math.PI) / 180)} ${
-                pivotY - arm * Math.sin((35 * Math.PI) / 180)
-              }`}
+          d={`M ${a0.x} ${a0.y} A ${arm} ${arm} 0 0 ${sweep} ${a1.x} ${a1.y}`}
           fill="none"
           stroke="var(--accent)"
           strokeWidth="0.55"
           strokeDasharray="2.5 2.5"
-          opacity="0.35"
+          opacity="0.4"
         />
         <circle cx={pivotX} cy={pivotY} r="2.4" fill="var(--muted-foreground)" />
         <SensorChip x={92} y={50} face="left" />
@@ -327,12 +293,11 @@ export function DynamicPreview({ id }: { id: string }) {
           <animateTransform
             attributeName="transform"
             type="rotate"
-            from="-35 28 58"
-            to="0 28 58"
+            values={`${startDeg} ${pivotX} ${pivotY}; ${endDeg} ${pivotX} ${pivotY}; ${startDeg} ${pivotX} ${pivotY}`}
             dur="1.6s"
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0.55 0 0.35 1"
+            keySplines="0.55 0 0.35 1; 0.55 0 0.35 1"
           />
           <line
             x1={pivotX}
@@ -343,14 +308,12 @@ export function DynamicPreview({ id }: { id: string }) {
             strokeWidth="1.4"
             strokeLinecap="round"
           />
-          {/* Small axial cylinder at arm tip, side-on */}
           <g transform={`translate(${pivotX + arm - 4}, ${pivotY - 7})`}>
             <ellipse cx="0" cy="0" rx="5" ry="2" fill="#5dade2" />
             <rect x="-5" y="0" width="10" height="10" fill="#c0392b" />
             <ellipse cx="0" cy="10" rx="5" ry="2" fill="#922b21" />
           </g>
         </g>
-        <Caption>35° hinge arc</Caption>
       </svg>
     );
   }

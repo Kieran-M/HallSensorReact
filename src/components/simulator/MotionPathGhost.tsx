@@ -154,6 +154,43 @@ function RotationArc({
   );
 }
 
+/** Circular hinge arc from start→end angle (same kinematics as evaluateMotionPose). */
+function HingeArc({
+  animation,
+}: {
+  animation: Extract<AnimationParams, { type: "hinge" }>;
+}) {
+  const points = useMemo(() => {
+    const start = animation.startAngle;
+    const end = animation.endAngle;
+    const steps = Math.max(20, Math.ceil(Math.abs(end - start) / 3));
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const pose = evaluateMotionPose(
+        { ...animation, bounce: false },
+        i / steps,
+      );
+      pts.push(new THREE.Vector3(...pose.position));
+    }
+    return pts;
+  }, [animation]);
+
+  if (points.length < 2) return null;
+
+  return (
+    <Line
+      points={points}
+      color={PATH_COLOR}
+      lineWidth={1.75}
+      transparent
+      opacity={0.65}
+      dashed
+      dashSize={0.0015}
+      gapSize={0.001}
+    />
+  );
+}
+
 /**
  * Motion path ghost: centre polyline, start/end markers, hinge pivot,
  * rotate sweep arc, and a faint end-pose body.
@@ -215,22 +252,26 @@ export function MotionPathGhost() {
 
   return (
     <group raycast={() => null}>
-      {translating && pathPoints.length > 1 && (
-        <Line
-          points={pathPoints}
-          color={PATH_COLOR}
-          lineWidth={1.75}
-          transparent
-          opacity={0.65}
-          dashed
-          dashSize={0.0015}
-          gapSize={0.001}
-        />
-      )}
+      {translating &&
+        animation.type !== "hinge" &&
+        pathPoints.length > 1 && (
+          <Line
+            points={pathPoints}
+            color={PATH_COLOR}
+            lineWidth={1.75}
+            transparent
+            opacity={0.65}
+            dashed
+            dashSize={0.0015}
+            gapSize={0.001}
+          />
+        )}
 
       {animation.type === "rotate" && (
         <RotationArc animation={animation} radius={r * 4.5} />
       )}
+
+      {animation.type === "hinge" && <HingeArc animation={animation} />}
 
       {/* Start / end markers — coalesce when the centre does not travel (rotate). */}
       {translating ? (

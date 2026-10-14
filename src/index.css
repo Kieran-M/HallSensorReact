@@ -1,10 +1,23 @@
 @import "tailwindcss";
 
-/* ── Brand palette ─────────────────────────────────────────── */
+/* Slightly larger type scale — UI was hard to read at default xs/sm. */
+@theme {
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.1875rem;
+}
+
+/* ── Brand palette (Diodes Endeavour blue + HallSim navy/cyan) ─ */
 :root {
-  --brand-steel: #175d9b;
-  --brand-steel-deep: #0e4a7a;
-  --brand-steel-bright: #3b8fd4;
+  /* Official-leaning Diodes primary */
+  --diodes-blue: #005a9c;
+  --diodes-blue-deep: #004578;
+  --diodes-blue-bright: #1a7cc2;
+
+  --brand-steel: var(--diodes-blue);
+  --brand-steel-deep: var(--diodes-blue-deep);
+  --brand-steel-bright: var(--diodes-blue-bright);
   --brand-steel-soft: #c0d0e0;
   --brand-cyan: #5ec8d8;
   --brand-cyan-soft: #a8e4ec;
@@ -27,26 +40,26 @@
   --heading: "Segoe UI", system-ui, sans-serif;
   --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
 
-  /* Dark is the default theme */
-  --background: var(--brand-navy);
-  --foreground: var(--brand-ghost);
-  --card: var(--brand-navy-card);
-  --card-foreground: var(--brand-ghost);
-  --muted: var(--brand-navy-muted);
-  --muted-foreground: #9bb8cb;
-  --accent: var(--brand-cyan);
-  --accent-hover: var(--brand-cyan-soft);
-  --accent-foreground: var(--brand-navy);
-  --border: var(--brand-navy-border);
-  --chart-grid: var(--brand-navy-grid);
-  --canvas: var(--brand-navy-canvas);
-  --grid-cell: var(--brand-navy-grid-cell);
-  --grid-section: var(--brand-navy-grid-section);
+  /* Light is the default theme */
+  --background: var(--brand-whitesmoke);
+  --foreground: var(--brand-navy);
+  --card: #ffffff;
+  --card-foreground: var(--brand-navy);
+  --muted: var(--brand-azure);
+  --muted-foreground: #355870;
+  --accent: var(--diodes-blue);
+  --accent-hover: var(--diodes-blue-deep);
+  --accent-foreground: var(--brand-white);
+  --border: #9bb9d0;
+  --chart-grid: #b7cfe0;
+  --canvas: #c5e0ec;
+  --grid-cell: #5a8fb8;
+  --grid-section: var(--diodes-blue);
 
-  /* Slightly larger base for denser mono UI labels */
-  font: 17px/150% var(--sans);
+  /* Readable base for mono-heavy UI */
+  font: 18px/155% var(--sans);
   letter-spacing: 0.01em;
-  color-scheme: dark;
+  color-scheme: light;
   color: var(--foreground);
   background: var(--background);
   font-synthesis: none;
@@ -62,7 +75,7 @@
   --card: var(--brand-navy-card);
   --card-foreground: var(--brand-ghost);
   --muted: var(--brand-navy-muted);
-  --muted-foreground: #9bb8cb;
+  --muted-foreground: #b4cce0;
   --accent: var(--brand-cyan);
   --accent-hover: var(--brand-cyan-soft);
   --accent-foreground: var(--brand-navy);
@@ -80,15 +93,15 @@
   --card: #ffffff;
   --card-foreground: var(--brand-navy);
   --muted: var(--brand-azure);
-  --muted-foreground: #4a6f86;
-  --accent: var(--brand-steel-bright);
-  --accent-hover: var(--brand-steel);
+  --muted-foreground: #355870;
+  --accent: var(--diodes-blue);
+  --accent-hover: var(--diodes-blue-deep);
   --accent-foreground: var(--brand-white);
   --border: #9bb9d0;
   --chart-grid: #b7cfe0;
   --canvas: #c5e0ec;
   --grid-cell: #5a8fb8;
-  --grid-section: #175d9b;
+  --grid-section: var(--diodes-blue);
 }
 
 #root {
@@ -105,7 +118,8 @@
 /* Landing preset grid: skip offscreen layout/paint work (helps mobile LCP). */
 .preset-card {
   content-visibility: auto;
-  contain-intrinsic-size: auto 420px;
+  contain-intrinsic-size: auto 560px;
+  height: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -115,16 +129,27 @@
   }
 }
 
+/* Datasheet CTA — accent outline button */
+a.hs-datasheet-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+  background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+a.hs-datasheet-btn:hover {
+  background-color: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
 /* Scale UI on wide / ultrawide */
 @media (min-width: 1536px) {
   :root {
-    font-size: 18px;
+    font-size: 19px;
   }
 }
 
 @media (min-width: 1920px) {
   :root {
-    font-size: 19px;
+    font-size: 20px;
   }
 }
 
@@ -136,6 +161,17 @@ input[type="range"].hs-scrubber {
   height: 1.25rem;
   background: transparent;
   cursor: pointer;
+}
+
+/* Transparent track when layered over a sparkline */
+input[type="range"].hs-scrubber-overlay {
+  height: 100%;
+}
+input[type="range"].hs-scrubber-overlay::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+input[type="range"].hs-scrubber-overlay::-moz-range-track {
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
 }
 
 input[type="range"].hs-scrubber:focus {

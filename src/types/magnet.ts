@@ -61,7 +61,7 @@ const BASE_DEFAULTS: BaseMagnetParams = {
   poles: 2,
   material: "NdFeB",
   materialGrade: "N42",
-  remanence: 1.32,
+  remanence: 1.3,
   temperature: 20,
   tempCoefficient: -0.12,
   coercivity: 995,

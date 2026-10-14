@@ -3,6 +3,7 @@ import { useSimulatorStore } from "../../store/simulatorStore";
 import { useShallow } from "zustand/shallow";
 import type { FieldSample } from "../../lib/fieldMath";
 import { startSmoothSeek } from "../../lib/playbackCursor";
+import { isDigitalHall } from "../../types/simulation";
 
 const SPEED_OPTIONS = [0.25, 0.5, 1, 1.5, 2] as const;
 
@@ -19,6 +20,7 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
     fps,
     frameCount,
     playbackSpeed,
+    digital,
   } = useSimulatorStore(
     useShallow((s) => ({
       playing: s.playing,
@@ -27,6 +29,7 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
       fps: s.fps,
       frameCount: s.simulation?.frames.length ?? 0,
       playbackSpeed: s.playbackSpeed,
+      digital: isDigitalHall(s.simulation?.sensorPackage),
     })),
   );
 
@@ -88,9 +91,9 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
 
   return (
     <>
-      {(playing || done) && liveRow && (
+      {liveRow && (
         <div
-          className="absolute top-3 left-3 sm:top-4 sm:left-4 rounded-sm p-2.5 sm:p-3 space-y-1.5 pointer-events-none backdrop-blur-sm z-10 w-[12rem] hs-canvas-fade-in"
+          className="absolute top-3 left-3 sm:top-4 sm:left-4 rounded-sm p-2.5 sm:p-3 space-y-1 pointer-events-none backdrop-blur-sm z-10 w-[min(12rem,calc(100%-1.5rem))] hs-canvas-fade-in"
           style={{
             backgroundColor:
               "color-mix(in srgb, var(--background) 85%, transparent)",
@@ -98,7 +101,7 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
           }}
         >
           <div
-            className="font-mono text-xs uppercase tracking-widest mb-2"
+            className="font-mono text-xs uppercase tracking-wide mb-1.5"
             style={{ color: "var(--accent)" }}
           >
             Live Output
@@ -109,20 +112,28 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
             { label: "Bz", value: `${liveRow.bz} G`, color: "#a78bfa" },
             { label: "|B|", value: `${liveRow.btotal} G`, color: "#34d399" },
             { label: "Vout", value: `${liveRow.vout} V`, color: "#fbbf24" },
-            { label: "Code", value: `${liveRow.code}`, color: "#94a3b8" },
+            ...(digital
+              ? [
+                  {
+                    label: "Code",
+                    value: `${liveRow.code}`,
+                    color: "#94a3b8",
+                  },
+                ]
+              : []),
           ].map((r) => (
             <div
               key={r.label}
-              className="flex items-center justify-between gap-3 sm:gap-4"
+              className="flex items-center justify-between gap-2 min-w-0"
             >
               <span
-                className="font-mono text-xs"
+                className="font-mono text-xs shrink-0"
                 style={{ color: "var(--muted-foreground)" }}
               >
                 {r.label}
               </span>
               <span
-                className="font-mono text-[13px] font-semibold"
+                className="font-mono text-[12px] font-semibold tabular-nums truncate text-right min-w-0"
                 style={{ color: r.color }}
               >
                 {r.value}
@@ -141,7 +152,7 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
               "color-mix(in srgb, var(--card) 95%, transparent)",
           }}
         >
-          <div className="mb-1.5 flex items-center justify-between gap-2">
+          <div className="mb-1.5 flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               <div
                 className={`h-1.5 w-1.5 shrink-0 rounded-full ${playing ? "animate-pulse" : ""}`}
@@ -154,7 +165,7 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
                 }}
               />
               <span
-                className="font-mono text-xs uppercase tracking-widest truncate"
+                className="font-mono text-xs uppercase tracking-wide"
                 style={{
                   color: playing
                     ? "var(--accent)"
@@ -173,13 +184,14 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
               </span>
             </div>
             <span
-              className="font-mono text-xs uppercase tracking-widest shrink-0"
+              className="font-mono text-xs tabular-nums shrink-0 text-right"
               style={{ color: "var(--muted-foreground)" }}
               title="Space toggles play/pause"
             >
-              {Math.round(currentFrame)} / {lastFrame} ·{" "}
-              {currentTime.toFixed(2)}s
+              {Math.round(currentFrame)}/{lastFrame}
               <span className="hidden sm:inline">
+                {" "}
+                · {currentTime.toFixed(2)}s
                 {fps > 0 ? ` · ${fps}fps` : ""} · {playbackSpeed}×
               </span>
             </span>
@@ -201,7 +213,7 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
             <button
               type="button"
               onClick={playing ? pause : handlePlay}
-              className="min-w-20 sm:min-w-24 rounded-sm px-3 sm:px-4 py-1.5 font-mono text-[13px] uppercase tracking-widest transition-colors bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]"
+              className="min-w-20 sm:min-w-24 rounded-sm px-3 sm:px-4 py-1.5 font-mono text-[12px] uppercase tracking-wide transition-colors bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]"
             >
               {playing
                 ? "Ⅱ Pause"
@@ -212,14 +224,14 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
             <button
               type="button"
               onClick={handleReset}
-              className="rounded-sm px-3 sm:px-4 py-1.5 font-mono text-[13px] uppercase tracking-widest transition-colors border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--accent)]/50"
+              className="rounded-sm px-3 sm:px-4 py-1.5 font-mono text-[12px] uppercase tracking-wide transition-colors border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--accent)]/50"
             >
               ■ Reset
             </button>
 
             <div className="flex items-center gap-1 w-full sm:w-auto justify-center sm:ml-1 sm:pl-2 sm:border-l sm:border-[var(--border)]">
               <span
-                className="font-mono text-xs uppercase tracking-widest mr-1 hidden sm:inline"
+                className="font-mono text-xs uppercase tracking-wide mr-1 hidden sm:inline"
                 style={{ color: "var(--muted-foreground)" }}
               >
                 Speed
@@ -231,7 +243,7 @@ export function PlaybackHud({ dataset }: PlaybackHudProps) {
                     key={speed}
                     type="button"
                     onClick={() => setPlaybackSpeed(speed)}
-                    className="rounded-sm px-1.5 py-1 font-mono text-xs uppercase tracking-widest transition-colors hover:border-[var(--accent)]/60 hover:text-[var(--accent)]"
+                    className="rounded-sm px-1.5 py-1 font-mono text-xs uppercase tracking-wide transition-colors hover:border-[var(--accent)]/60 hover:text-[var(--accent)]"
                     style={{
                       border: "1px solid",
                       borderColor: active ? "var(--accent)" : "var(--border)",

@@ -5,6 +5,12 @@ import {
   prefetchCustomSetup,
   prefetchDesignWorkspace,
 } from '../../../lib/prefetch'
+import {
+  DiodesMark,
+  DiodesTrademarkNote,
+  HallSimBrand,
+} from '../../brand/DiodesMark'
+import { ApiStatusPill } from '../../ui/ApiStatusPill'
 import { ThemeToggle } from '../../ui/Theme'
 import { DynamicPreview } from './PresetPreview'
 import { MotionPreview } from './SetupPreviews'
@@ -50,9 +56,13 @@ function MagnetIcon({ type }: { type: string }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div className="font-mono text-xs uppercase tracking-widest text-(--muted-foreground) mb-0.5">{label}</div>
-      <div className="font-mono text-sm text-(--foreground)">{value}</div>
+    <div className="min-w-0">
+      <div className="font-mono text-xs uppercase tracking-wide text-(--muted-foreground) mb-0.5">
+        {label}
+      </div>
+      <div className="font-mono text-[12px] text-(--foreground) leading-snug break-words">
+        {value}
+      </div>
     </div>
   )
 }
@@ -70,48 +80,48 @@ function SimCard({
 }) {
   return (
     <div
-      className={`preset-card flex flex-col border rounded-sm transition-all duration-200 ${selected
+      className={`preset-card flex h-full flex-col border rounded-sm transition-all duration-200 ${selected
         ? 'border-(--accent) bg-(--accent)/5 shadow-[0_0_28px_color-mix(in_srgb,var(--accent)_12%,transparent)]'
         : 'border-(--border) bg-(--card) hover:border-(--accent)/40'
         }`}
     >
-      <button onClick={onSelect} className="w-full text-left p-5 cursor-pointer flex-1">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="flex items-center gap-2">
-            <MagnetIcon type={sim.magnetType} />
-            <span className="font-mono text-[13px] uppercase tracking-widest text-(--muted-foreground)">
-              {sim.category}
-            </span>
-          </div>
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex w-full flex-1 flex-col p-5 text-left cursor-pointer min-h-0"
+      >
+        {/* Fixed header band — same top edge for every card */}
+        <div className="mb-3 flex h-5 items-center gap-2 shrink-0">
+          <MagnetIcon type={sim.magnetType} />
+          <span className="font-mono text-[12px] uppercase tracking-wide text-(--muted-foreground)">
+            {sim.category}
+          </span>
         </div>
 
         <h3
-          className={`text-base font-semibold leading-tight mb-2 transition-colors ${selected ? 'text-(--accent)' : 'text-(--card-foreground)'
-            }`}
+          className={`mb-4 text-base font-semibold leading-snug transition-colors ${
+            selected ? 'text-(--accent)' : 'text-(--card-foreground)'
+          }`}
         >
           {sim.label}
         </h3>
 
-        <p className="text-xs text-(--muted-foreground) leading-relaxed mb-4 line-clamp-3">
-          {sim.description}
-        </p>
+        <div className="mb-4 border-b border-(--border) shrink-0" />
 
-        <div className="border-b border-(--border) mb-4" />
-
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mb-4">
+        <div className="mb-4 grid grid-cols-2 gap-x-3 gap-y-2 shrink-0">
           <Stat label="Magnet Type" value={sim.magnetType} />
           <Stat label="Waveform" value={sim.waveform} />
         </div>
 
-        <div className="border border-(--border) rounded-sm bg-(--background)/60 mb-4 overflow-hidden flex items-center justify-center">
+        <div className="mb-4 flex h-20 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-(--border) bg-(--background)/60">
           <DynamicPreview id={sim.id} />
         </div>
 
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap content-start gap-1 shrink-0">
           {sim.tags.map((t) => (
             <span
               key={t}
-              className="font-mono text-xs uppercase tracking-wider text-(--muted-foreground) border border-(--border) px-1.5 py-0.5 rounded-sm"
+              className="font-mono text-xs uppercase tracking-wide text-(--muted-foreground) border border-(--border) px-1.5 py-0.5 rounded-sm"
             >
               {t}
             </span>
@@ -119,12 +129,13 @@ function SimCard({
         </div>
       </button>
 
-      <div className="px-5 pb-5">
+      <div className="mt-auto shrink-0 px-5 pb-5 pt-4">
         <button
+          type="button"
           onClick={onOpen}
           onMouseEnter={() => prefetchDesignWorkspace()}
           onFocus={() => prefetchDesignWorkspace()}
-          className={`w-full cursor-pointer font-mono text-[13px] uppercase tracking-widest py-2 rounded-sm border transition-all ${selected
+          className={`w-full cursor-pointer font-mono text-[12px] uppercase tracking-wide py-2 rounded-sm border transition-all ${selected
             ? 'border-(--accent) text-(--accent-foreground) bg-(--accent) hover:bg-(--accent-hover) hover:border-(--accent-hover)'
             : 'border-(--border) text-(--muted-foreground) hover:border-(--accent)/50 hover:text-(--accent)'
             }`}
@@ -147,7 +158,7 @@ function CustomSetupBanner({ onClick }: { onClick: () => void }) {
     >
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-0">
         <div className="p-6 md:p-8 flex flex-col justify-center">
-          <div className="font-mono text-[13px] uppercase tracking-widest text-(--accent) mb-3">
+          <div className="font-mono text-sm uppercase tracking-widest text-(--accent) mb-3">
             Custom setup
           </div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
@@ -158,10 +169,10 @@ function CustomSetupBanner({ onClick }: { onClick: () => void }) {
             summary, then open the design workspace with those defaults.
           </p>
           <div className="flex flex-wrap gap-2 mb-6">
-            {['1 · Motion', '2 · Magnet', '3 · Sensor', '4 · Create'].map((s) => (
+            {['1 · Motion', '2 · Magnet', '3 · Sensor', '4 · Summary'].map((s) => (
               <span
                 key={s}
-                className="font-mono text-[11px] uppercase tracking-widest px-2.5 py-1 rounded-sm border border-(--border) text-(--muted-foreground) bg-(--background)/50"
+                className="font-mono text-xs uppercase tracking-widest px-2.5 py-1 rounded-sm border border-(--border) text-(--muted-foreground) bg-(--background)/50"
               >
                 {s}
               </span>
@@ -178,7 +189,7 @@ function CustomSetupBanner({ onClick }: { onClick: () => void }) {
               prefetchCustomSetup()
               prefetchDesignWorkspace()
             }}
-            className="w-full sm:w-auto self-start font-mono text-[13px] uppercase tracking-widest px-6 py-3 rounded-sm bg-(--accent) text-(--accent-foreground) hover:bg-(--accent-hover) transition-colors cursor-pointer"
+            className="w-full sm:w-auto self-start font-mono text-sm uppercase tracking-widest px-6 py-3 rounded-sm bg-(--accent) text-(--accent-foreground) hover:bg-(--accent-hover) transition-colors cursor-pointer"
           >
             Start custom setup →
           </button>
@@ -202,7 +213,7 @@ function CustomSetupBanner({ onClick }: { onClick: () => void }) {
               key={m.type}
               className="rounded-sm border border-(--border) bg-(--card)/80 p-2 flex flex-col"
             >
-              <div className="font-mono text-[10px] uppercase tracking-widest text-(--muted-foreground) px-1 mb-1">
+              <div className="font-mono text-xs uppercase tracking-widest text-(--muted-foreground) px-1 mb-1">
                 {m.label}
               </div>
               <div className="rounded-sm overflow-hidden flex-1 flex items-center">
@@ -223,25 +234,12 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-(--background) text-(--foreground)">
-      <header className="border-b border-(--border) px-6 py-4 flex items-center justify-between sticky top-0 z-20 backdrop-blur-sm bg-(--background)/90">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 relative flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full border border-(--accent)/60" />
-            <div className="w-2 h-2 rounded-full bg-(--accent)" />
-          </div>
-          <div>
-            <div className="font-mono text-xs uppercase tracking-widest text-(--accent)">HallSim</div>
-            <div className="font-mono text-xs uppercase tracking-widest text-(--muted-foreground)">
-              Sensor Simulation Platform
-            </div>
-          </div>
+      <header className="border-b border-(--border) px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-20 backdrop-blur-sm bg-(--background)/90">
+        <div className="min-w-0 overflow-hidden">
+          <HallSimBrand />
         </div>
-        <div className="flex items-center gap-6">
-          <span className="font-mono text-[13px] uppercase tracking-widest text-(--muted-foreground)">v2.4.1</span>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-mono text-[13px] uppercase tracking-widest text-emerald-400">Ready</span>
-          </div>
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          <ApiStatusPill />
           <ThemeToggle />
         </div>
       </header>
@@ -250,7 +248,7 @@ export default function Landing() {
         <div className="px-6 py-12">
           <Suspense
             fallback={
-              <div className="max-w-4xl mx-auto font-mono text-[13px] uppercase tracking-widest text-(--accent)">
+              <div className="max-w-4xl mx-auto font-mono text-sm uppercase tracking-widest text-(--accent)">
                 Loading custom setup…
               </div>
             }
@@ -260,18 +258,21 @@ export default function Landing() {
         </div>
       ) : (
         <>
-          <div className="px-6 pt-16 pb-8 max-w-6xl mx-auto">
+          <div className="px-6 pt-14 pb-8 max-w-6xl mx-auto">
+            <div className="mb-5">
+              <DiodesMark height={48} />
+            </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-none mb-4">
-              Hall Sensor<br />
-              <span className="text-(--accent)">Simulation</span>
+              HallSim
             </h1>
             <p className="text-sm text-(--muted-foreground) max-w-xl leading-relaxed">
-              Build a custom setup, or jump in with a preconfigured magnetic
-              field scenario.
+              Interactive Hall-effect sensor simulation for Diodes linear and
+              digital parts — build a custom setup, or jump in with a
+              preconfigured magnetic scenario.
             </p>
           </div>
 
-          <div className="px-6 pb-24 max-w-6xl mx-auto">
+          <div className="px-6 pb-16 max-w-6xl mx-auto">
             <CustomSetupBanner onClick={() => setMode('custom')} />
 
             <div className="flex items-end justify-between gap-4 mb-4">
@@ -285,7 +286,7 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-stretch">
               {PRESET_LIST.map((preset) => (
                 <SimCard
                   key={preset.meta.id}
@@ -301,6 +302,19 @@ export default function Landing() {
               ))}
             </div>
           </div>
+
+          <footer
+            className="border-t border-(--border) px-6 py-5"
+            style={{
+              backgroundColor:
+                'color-mix(in srgb, var(--card) 70%, transparent)',
+            }}
+          >
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <HallSimBrand compact />
+              <DiodesTrademarkNote className="sm:max-w-md sm:text-right" />
+            </div>
+          </footer>
         </>
       )}
     </div>

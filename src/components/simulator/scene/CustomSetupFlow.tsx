@@ -4,12 +4,19 @@ import {
   hallTypeColor,
   PACKAGE_OUTLINE_LABELS,
 } from "../../../lib/packageVisuals";
+import {
+  DEFAULT_SENSOR_CATALOG_FILTERS,
+  filterSensorPackages,
+  type SensorCatalogFilterState,
+} from "../../../lib/sensorCatalogFilters";
 import { useSimulatorStore } from "../../../store/simulatorStore";
 import type { MagnetShape } from "../../../types/magnet";
 import type { MotionType } from "../../../types/motion";
-import type { HallType, SensorPackageInfo } from "../../../types/simulation";
+import type { SensorPackageInfo } from "../../../types/simulation";
 import { MOTION_TYPES, SHAPES } from "../../ui/panel/options";
 import { PackageThumb } from "../../ui/panel/PackageThumb";
+import { DatasheetLink } from "../../ui/panel/SensorPackageFields";
+import { SensorCatalogFilters } from "../../ui/panel/SensorCatalogFilters";
 import { MagnetShapePreview, MotionPreview } from "./SetupPreviews";
 
 type Step = "motion" | "magnet" | "sensor" | "summary";
@@ -53,30 +60,6 @@ const SHAPE_COPY: Partial<Record<MagnetShape, string>> = {
   axial_ring: "Ring with axial polarization.",
   sphere: "Spherical magnet for omnidirectional demos.",
 };
-
-type TypeFilter = "all" | HallType;
-
-function normalize(text: string): string {
-  return text.toLowerCase().replace(/[\s\-_./]+/g, "");
-}
-
-function matchesQuery(pkg: SensorPackageInfo, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  const qNorm = normalize(q);
-  const hay = [
-    pkg.partNumber,
-    pkg.id,
-    pkg.description,
-    pkg.hallType,
-    pkg.outputType,
-    ...pkg.packages,
-  ];
-  return (
-    hay.some((h) => h.toLowerCase().includes(q)) ||
-    hay.some((h) => normalize(h).includes(qNorm))
-  );
-}
 
 function ChoiceCard({
   selected,
@@ -137,7 +120,7 @@ function ChoiceCard({
           {tags.map((t) => (
             <span
               key={t}
-              className="font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border border-[var(--border)] text-[var(--muted-foreground)]"
+              className="font-mono text-xs uppercase tracking-wider px-1.5 py-0.5 rounded-sm border border-[var(--border)] text-[var(--muted-foreground)]"
             >
               {t}
             </span>
@@ -164,8 +147,10 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
   const [packages, setPackages] = useState<SensorPackageInfo[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [catalogTick, setCatalogTick] = useState(0);
+  const [filters, setFilters] = useState<SensorCatalogFilterState>(
+    DEFAULT_SENSOR_CATALOG_FILTERS,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -189,14 +174,12 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
     return () => {
       cancelled = true;
     };
-  }, [setSensorCatalog]);
+  }, [setSensorCatalog, catalogTick]);
 
-  const filteredPackages = useMemo(() => {
-    return packages.filter((pkg) => {
-      if (typeFilter !== "all" && pkg.hallType !== typeFilter) return false;
-      return matchesQuery(pkg, query);
-    });
-  }, [packages, query, typeFilter]);
+  const filteredPackages = useMemo(
+    () => filterSensorPackages(packages, filters),
+    [packages, filters],
+  );
 
   const selectedSensor =
     packages.find((p) => p.id === sensorPackageId) ?? null;
@@ -240,7 +223,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
           <button
             type="button"
             onClick={onCancel}
-            className="font-mono text-[13px] uppercase tracking-widest text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors mb-3"
+            className="font-mono text-sm uppercase tracking-widest text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors mb-3"
           >
             ← Back to presets
           </button>
@@ -338,48 +321,26 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
             <div className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
               Choose sensor from catalog
             </div>
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search part number, type, description…"
-              className="w-full rounded-sm border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 font-mono text-[13px] outline-none focus:border-[var(--accent)]/70"
+            <SensorCatalogFilters
+              packages={packages}
+              filters={filters}
+              onChange={setFilters}
+              searchPlaceholder="Search part number, type, description…"
             />
-            <div className="flex flex-wrap gap-1.5">
-              {(
-                [
-                  "all",
-                  "linear",
-                  "unipolar",
-                  "latch",
-                  "omnipolar",
-                ] as TypeFilter[]
-              ).map((f) => {
-                const active = typeFilter === f;
-                const color =
-                  f === "all"
-                    ? { accent: "var(--accent)", soft: "transparent" }
-                    : hallTypeColor(f);
-                return (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => setTypeFilter(f)}
-                    className="font-mono text-xs uppercase tracking-widest px-2.5 py-1 rounded-sm border transition-colors"
-                    style={{
-                      borderColor: active ? color.accent : "var(--border)",
-                      color: active ? color.accent : "var(--muted-foreground)",
-                      backgroundColor: active ? color.soft : "transparent",
-                    }}
-                  >
-                    {f === "all" ? "All" : hallTypeColor(f).label}
-                  </button>
-                );
-              })}
-            </div>
 
             {loadError && (
-              <p className="font-mono text-xs text-red-400">{loadError}</p>
+              <div className="space-y-2">
+                <p className="font-mono text-xs text-red-400 leading-relaxed">
+                  {loadError}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCatalogTick((t) => t + 1)}
+                  className="font-mono text-xs uppercase tracking-widest px-2 py-1 rounded-sm border border-(--border) text-(--muted-foreground) hover:text-(--foreground)"
+                >
+                  Retry catalog
+                </button>
+              </div>
             )}
             {loading && (
               <p className="font-mono text-xs text-[var(--muted-foreground)]">
@@ -415,11 +376,11 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
                         size={52}
                       />
                       <div className="min-w-0 space-y-1">
-                        <div className="font-mono text-[13px] font-semibold">
+                        <div className="font-mono text-sm font-semibold">
                           {pkg.partNumber}
                         </div>
                         <div
-                          className="font-mono text-[10px] uppercase tracking-widest"
+                          className="font-mono text-xs uppercase tracking-widest"
                           style={{ color: c.accent }}
                         >
                           {c.label} · {PACKAGE_OUTLINE_LABELS[pkg.packageOutline]}
@@ -427,6 +388,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
                         <p className="font-mono text-xs text-[var(--muted-foreground)] line-clamp-2 leading-relaxed">
                           {pkg.description}
                         </p>
+                        <DatasheetLink url={pkg.datasheetUrl} />
                       </div>
                     </button>
                   </li>
@@ -443,7 +405,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
             </div>
             <div className="grid sm:grid-cols-3 gap-3">
               <div className="rounded-sm border border-[var(--border)] p-4 bg-[var(--background)]/50 space-y-2">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">
+                <div className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
                   Motion
                 </div>
                 {motionType && (
@@ -462,7 +424,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
                 </p>
               </div>
               <div className="rounded-sm border border-[var(--border)] p-4 bg-[var(--background)]/50 space-y-2">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">
+                <div className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
                   Magnet
                 </div>
                 {magnetShape && (
@@ -481,7 +443,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
                 </p>
               </div>
               <div className="rounded-sm border border-[var(--border)] p-4 bg-[var(--background)]/50 space-y-2">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">
+                <div className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
                   Sensor
                 </div>
                 {selectedSensor ? (
@@ -496,7 +458,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
                         <div className="font-mono text-sm font-semibold text-[var(--accent)]">
                           {selectedSensor.partNumber}
                         </div>
-                        <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">
+                        <div className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
                           {hallTypeColor(selectedSensor.hallType).label}
                         </div>
                       </div>
@@ -504,6 +466,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
                     <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed line-clamp-3">
                       {selectedSensor.description}
                     </p>
+                    <DatasheetLink url={selectedSensor.datasheetUrl} />
                   </>
                 ) : (
                   <div className="font-mono text-sm">—</div>
@@ -523,7 +486,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
         <button
           type="button"
           onClick={goBack}
-          className="font-mono text-[13px] uppercase tracking-widest px-4 py-2 rounded-sm border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--accent)]/50 transition-colors"
+          className="font-mono text-sm uppercase tracking-widest px-4 py-2 rounded-sm border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--accent)]/50 transition-colors"
         >
           {step === "motion" ? "Cancel" : "Back"}
         </button>
@@ -533,7 +496,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
             type="button"
             disabled={!canContinue()}
             onClick={goNext}
-            className="font-mono text-[13px] uppercase tracking-widest px-5 py-2.5 rounded-sm bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="font-mono text-sm uppercase tracking-widest px-5 py-2.5 rounded-sm bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Continue →
           </button>
@@ -541,7 +504,7 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
           <button
             type="button"
             onClick={createSim}
-            className="font-mono text-[13px] uppercase tracking-widest px-5 py-2.5 rounded-sm bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] transition-colors font-semibold"
+            className="font-mono text-sm uppercase tracking-widest px-5 py-2.5 rounded-sm bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] transition-colors font-semibold"
           >
             Create simulation →
           </button>

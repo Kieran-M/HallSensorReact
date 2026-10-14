@@ -4,6 +4,8 @@ import { AxisGizmoOverlay } from "../components/simulator/AxisGizmoOverlay";
 import { SidePanel } from "../components/ui/SidePanel";
 import { GraphPanel } from "../components/graphs/GraphsPanel";
 import { PlaybackHud } from "../components/simulator/PlaybackHud";
+import { HallSimBrand } from "../components/brand/DiodesMark";
+import { ApiStatusPill } from "../components/ui/ApiStatusPill";
 import { ThemeToggle } from "../components/ui/Theme";
 import { useSimulatorStore } from "../store/simulatorStore";
 import { useShallow } from "zustand/shallow";
@@ -43,7 +45,7 @@ export function DesignPage() {
   );
 
   const isResults = view === "results";
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
   const [mobilePane, setMobilePane] = useState<MobilePane>("scene");
   const [isLg, setIsLg] = useState(() =>
     typeof window !== "undefined"
@@ -95,28 +97,22 @@ export function DesignPage() {
 
   return (
     <div className="h-dvh bg-[var(--background)] text-[var(--foreground)] flex flex-col overflow-hidden">
-      <header className="shrink-0 border-b border-[var(--border)] px-4 sm:px-6 py-3 flex items-center justify-between z-20 bg-[var(--background)]/90">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+      <header className="shrink-0 border-b border-[var(--border)] px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 z-20 bg-[var(--background)]/90">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <button
             type="button"
             onClick={handleBack}
-            className="shrink-0 font-mono text-[13px] uppercase tracking-widest text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+            className="shrink-0 font-mono text-[12px] uppercase tracking-wide text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
           >
             {isResults ? "← Setup" : "← Back"}
           </button>
           <div className="w-px h-4 bg-[var(--border)] shrink-0" />
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-5 h-5 relative flex items-center justify-center shrink-0">
-              <div className="absolute inset-0 rounded-full border border-[var(--accent)]/60" />
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-            </div>
-            <span className="font-mono text-xs uppercase tracking-widest text-[var(--accent)]">
-              HallSim
-            </span>
+          <div className="min-w-0 overflow-hidden">
+            <HallSimBrand compact />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 flex-wrap justify-end">
           {isResults && (
             <div
               className="flex lg:hidden items-center rounded-sm p-0.5"
@@ -139,7 +135,7 @@ export function DesignPage() {
                     aria-selected={active}
                     onClick={() => setMobilePane(tab.id)}
                     className={[
-                      "font-mono text-[13px] uppercase tracking-widest px-2.5 py-1 rounded-sm transition-colors",
+                      "font-mono text-xs uppercase tracking-wide px-2 py-1 rounded-sm transition-colors",
                       active
                         ? "text-[var(--accent)]"
                         : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
@@ -160,22 +156,25 @@ export function DesignPage() {
             </div>
           )}
 
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3 min-w-0">
             {!isResults && (
               <>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-mono text-xs uppercase tracking-wide text-[var(--muted-foreground)] shrink-0">
                     Preset
                   </span>
-                  <span className="font-mono text-[13px] text-[var(--foreground)] border border-[var(--border)] px-2 py-0.5 rounded-sm">
+                  <span
+                    className="font-mono text-[12px] text-[var(--foreground)] border border-[var(--border)] px-2 py-0.5 rounded-sm max-w-[9rem] truncate"
+                    title={activePreset?.label ?? "Custom"}
+                  >
                     {activePreset?.label ?? "Custom"}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-xs uppercase tracking-wide text-[var(--muted-foreground)]">
                     Motion
                   </span>
-                  <span className="font-mono text-[13px] text-[var(--foreground)]">
+                  <span className="font-mono text-[12px] text-[var(--foreground)]">
                     {animationType}
                   </span>
                 </div>
@@ -183,34 +182,33 @@ export function DesignPage() {
             )}
             {isResults && simulation?.sensorPackage && (
               <span
-                className="font-mono text-[13px] border px-2 py-0.5 rounded-sm"
+                className="font-mono text-[12px] border border-[var(--border)] px-2 py-0.5 rounded-sm max-w-[8rem] truncate"
                 title={simulation.sensorPackage.description}
               >
                 {simulation.sensorPackage.partNumber}
               </span>
             )}
             {isResults && (
-              <span className="font-mono text-[13px] border border-[var(--border)] px-2 py-0.5 rounded-sm">
+              <span
+                className="font-mono text-[12px] border border-[var(--border)] px-2 py-0.5 rounded-sm max-w-[7rem] truncate"
+                title={magnet.shape}
+              >
                 {magnet.shape}
               </span>
             )}
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)]">
-                Step
-              </span>
-              <span className="font-mono text-[13px] text-[var(--foreground)]">
-                {isResults ? "3 / 3" : "2 / 3"}
-              </span>
-            </div>
+            <span className="font-mono text-xs uppercase tracking-wide text-[var(--muted-foreground)]">
+              {isResults ? "Results" : "Setup"}
+            </span>
           </div>
 
+          <ApiStatusPill compact />
           <ThemeToggle />
 
           {!isResults && (
             <button
               type="button"
               onClick={() => setPanelOpen((v) => !v)}
-              className="lg:hidden font-mono text-[13px] uppercase tracking-widest border border-[var(--border)] px-2 py-1 rounded-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--accent)]/50 transition-colors"
+              className="lg:hidden font-mono text-xs uppercase tracking-wide border border-[var(--border)] px-2 py-1 rounded-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--accent)]/50 transition-colors"
             >
               {panelOpen ? "Close" : "Panel"}
             </button>

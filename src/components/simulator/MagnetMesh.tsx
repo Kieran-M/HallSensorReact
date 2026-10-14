@@ -107,7 +107,8 @@ function LocalAxes({ length }: { length: number }) {
 }
 
 export function Magnet({ config }: { config: MagnetParams }) {
-  const poles = config.poles % 2 !== 0 || config.poles < 2 ? 2 : config.poles;
+  // Phase 1: dipole only (field model is a single magnet segment).
+  const poles = 2;
   const groupRef = useRef<THREE.Group>(null);
   const axesLen = useMemo(() => axisLength(config), [config]);
 

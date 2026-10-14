@@ -53,7 +53,7 @@ const N35 = {
  *   Linear, Head-On      → axial cylinder, axial approach
  *   Arc (Hinge)          → axial cylinder, hinge at origin, ~35° sweep
  *   Rotation or Spin     → radial (diametric) cylinder, 0–360°
- *   Rotation (Ring)      → ring, 0–360° (single-segment Magpylib today)
+ *   Rotation (Ring)      → ring, 0–360° (dipole / 2-pole)
  *
  * Keep stable `id`s for landing SVG previews / store applyPreset.
  */
@@ -204,8 +204,7 @@ export const PRESETS: Record<string, PresetSetup> = {
 
   /**
    * Rotation or Spin (Ring) — ring magnet, full turn.
-   * Note: Magpylib uses a single CylinderSegment today; multi-segment
-   * radial Collection (doc) is not modelled yet — poles are UI metadata.
+   * Poles fixed at 2: field uses a single ring segment (dipole).
    */
   "incremental-encoding": {
     meta: {
@@ -213,7 +212,7 @@ export const PRESETS: Record<string, PresetSetup> = {
       label: "Rotation or Spin (Ring)",
       category: "Rotary",
       description:
-        "Ring magnet rotating above the sensor (0–360°). Field uses a single Magpylib ring segment for now; multi-pole radial Collection comes later.",
+        "Ring magnet rotating above the sensor (0–360°).",
       fieldStrength: "15–50 mT",
       waveform: "Periodic",
       magnetType: "Ring",
@@ -222,7 +221,7 @@ export const PRESETS: Record<string, PresetSetup> = {
     magnet: {
       ...N42,
       shape: "ring",
-      poles: 12,
+      poles: 2,
       outerDiameter: 16,
       innerDiameter: 10,
       height: 2.5,

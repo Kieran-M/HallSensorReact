@@ -46,7 +46,7 @@ export function useSimulation(): {
       const message =
         error instanceof Error
           ? error.message
-          : "Simulation failed. Check that the backend is running.";
+          : "Simulation failed. Check that the backend is reachable.";
       useSimulatorStore.getState().setSimulating(false);
       useSimulatorStore.getState().setSimulationError(message);
     }

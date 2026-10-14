@@ -37,6 +37,8 @@ export interface SensorPackageInfo {
   activeLevel?: ActiveLevel | null;
   packages: string[];
   packageOutline: PackageOutline;
+  /** Absolute Diodes datasheet URL when available. */
+  datasheetUrl?: string | null;
 }
 
 export interface SimulationFrame {
