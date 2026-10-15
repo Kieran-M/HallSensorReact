@@ -1,35 +1,35 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="HallSim - interactive Hall-effect sensor and magnet field simulator for evaluating Diodes sensors in virtual magnetic environments."
+      content="HallSim by Diodes Incorporated — interactive Hall-effect sensor and magnet field simulator for evaluating Diodes linear and digital sensors."
     />
-    <title>HallSim</title>
+    <title>HallSim · Diodes Incorporated</title>
     <script>
       (function () {
         try {
           var saved = localStorage.getItem('hallsim-theme');
-          var theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
+          var theme = saved === 'light' || saved === 'dark' ? saved : 'light';
           document.documentElement.dataset.theme = theme;
           document.documentElement.style.colorScheme = theme;
           document.documentElement.classList.add(theme);
         } catch (e) {
-          document.documentElement.dataset.theme = 'dark';
+          document.documentElement.dataset.theme = 'light';
         }
       })();
     </script>
-    <script type="module" crossorigin src="./assets/main-DhyfS3V5.js"></script>
+    <script type="module" crossorigin src="./assets/main-a3gQ3Vyz.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-QTnfLwEv.js">
     <link rel="modulepreload" crossorigin href="./assets/react-vendor-B5ZEWdOX.js">
-    <link rel="modulepreload" crossorigin href="./assets/simulatorStore-NcIDbrA8.js">
-    <link rel="modulepreload" crossorigin href="./assets/App-DtzZPQUS.js">
-    <link rel="stylesheet" crossorigin href="./assets/App-Bo5FmYe5.css">
+    <link rel="modulepreload" crossorigin href="./assets/simulationApi-2qaT_Qgx.js">
+    <link rel="modulepreload" crossorigin href="./assets/App-D2OeqCIk.js">
+    <link rel="stylesheet" crossorigin href="./assets/App-DWt1Nj04.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>
