@@ -5,6 +5,11 @@ import type {
   MotionType,
   XYZ,
 } from '../../../types/motion'
+import type { MagnetParams } from '../../../types/magnet'
+import {
+  faceAirGapMm,
+  magnetCenterZForFaceGap,
+} from '../../../lib/airGap'
 import { NumberInput } from '../inputs/NumberInput'
 import { SelectInput } from '../inputs/SelectInput'
 import { AXES, MOTION_TYPES } from './options'
@@ -20,6 +25,8 @@ function patchXYZ(
 
 export function MotionFields({
   animation,
+  magnet,
+  sensorZ = 0,
   setMotionType,
   patchAnimation,
   duration,
@@ -28,6 +35,9 @@ export function MotionFields({
   setFps,
 }: {
   animation: AnimationParams
+  magnet: MagnetParams
+  /** Sensor Z (mm) — air gap is magnet face to this height. */
+  sensorZ?: number
   setMotionType: (type: MotionType) => void
   patchAnimation: (patch: Partial<AnimationParams>) => void
   duration: number
@@ -36,6 +46,20 @@ export function MotionFields({
   setFps: (fps: number) => void
 }) {
   const [showOrientation, setShowOrientation] = useState(false)
+
+  const linearGap =
+    animation.type === 'linear'
+      ? faceAirGapMm(magnet, animation.startPosition.z, sensorZ)
+      : null
+
+  function setLinearFaceGap(gapMm: number) {
+    if (animation.type !== 'linear') return
+    const z = magnetCenterZForFaceGap(magnet, gapMm, sensorZ)
+    patchAnimation({
+      startPosition: { ...animation.startPosition, z },
+      endPosition: { ...animation.endPosition, z },
+    })
+  }
 
   return (
     <>
@@ -64,6 +88,24 @@ export function MotionFields({
         step={1}
         unit="fps"
       />
+
+      {animation.type === 'linear' && linearGap != null && (
+        <>
+          <NumberInput
+            label="Face air gap"
+            value={Number(linearGap.toFixed(2))}
+            onChange={setLinearFaceGap}
+            min={0.1}
+            max={200}
+            step={0.1}
+            unit="mm"
+          />
+          <p className="font-mono text-[10px] text-[var(--muted-foreground)] leading-snug -mt-1 mb-1">
+            Distance from magnet face to sensor Z. Adjusts start/end Z together
+            (keeps lateral travel). Same as changing Z under Start/End Position.
+          </p>
+        </>
+      )}
 
       {animation.type === 'linear' && (
         <>
@@ -242,8 +284,9 @@ export function MotionFields({
       {animation.type === 'hinge' && (
         <>
           <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed">
-            Lid / door swing: magnet rides an arc about a pivot. At 0° the magnet
-            sits arm-length along +X from the pivot (or +Y if axis is X).
+            Hinge axis is the pin (axle). At 0° the arm is closed along +X (or
+            +Y if axis is X). Positive angles open the lid up toward +Z;
+            negative angles swing under the board.
           </p>
           <XYZGroup
             label="Hinge Pivot"

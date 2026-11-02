@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { mmToWorld } from "../../../lib/utils";
+import { magpylibAxisRotation } from "../../../lib/magpylibFrame";
 import type { MagnetParams } from "../../../types/magnet";
 
 const POLE_COLORS = [["#e63946", "#457b9d"]];
@@ -43,6 +44,7 @@ export function BarMagnetMesh({
   width: number;
   height: number;
 }) {
+  // Magpylib Cuboid: (length, width, height) → (X, Y, Z); pol ±Z
   const l = mmToWorld(length);
   const w = mmToWorld(width);
   const h = mmToWorld(height);
@@ -57,7 +59,7 @@ export function BarMagnetMesh({
           <PoleSegment
             key={i}
             position={[x, 0, 0]}
-            geometry={<boxGeometry args={[segmentLength, h, w]} />}
+            geometry={<boxGeometry args={[segmentLength, w, h]} />}
             color={getPoleColor(i, isNorth)}
           />
         );
@@ -347,44 +349,56 @@ export function MagnetGeometry({
       );
     case "axial_cylinder":
       return (
-        <CylinderMagnetMesh
-          poles={poles}
-          outerDiameter={config.outerDiameter}
-          height={config.height}
-          axial={true}
-        />
+        <group rotation={magpylibAxisRotation("axial_cylinder")}>
+          <CylinderMagnetMesh
+            poles={poles}
+            outerDiameter={config.outerDiameter}
+            height={config.height}
+            axial={true}
+          />
+        </group>
       );
     case "diametric_cylinder":
       return (
-        <CylinderMagnetMesh
-          poles={poles}
-          outerDiameter={config.outerDiameter}
-          height={config.height}
-          axial={false}
-        />
+        <group rotation={magpylibAxisRotation("diametric_cylinder")}>
+          <CylinderMagnetMesh
+            poles={poles}
+            outerDiameter={config.outerDiameter}
+            height={config.height}
+            axial={false}
+          />
+        </group>
       );
     case "ring":
       return (
-        <RingMagnetMesh
-          poles={poles}
-          outerDiameter={config.outerDiameter}
-          innerDiameter={config.innerDiameter}
-          height={config.height}
-          axial={false}
-        />
+        <group rotation={magpylibAxisRotation("ring")}>
+          <RingMagnetMesh
+            poles={poles}
+            outerDiameter={config.outerDiameter}
+            innerDiameter={config.innerDiameter}
+            height={config.height}
+            axial={false}
+          />
+        </group>
       );
     case "axial_ring":
       return (
-        <RingMagnetMesh
-          poles={poles}
-          outerDiameter={config.outerDiameter}
-          innerDiameter={config.innerDiameter}
-          height={config.height}
-          axial={true}
-        />
+        <group rotation={magpylibAxisRotation("axial_ring")}>
+          <RingMagnetMesh
+            poles={poles}
+            outerDiameter={config.outerDiameter}
+            innerDiameter={config.innerDiameter}
+            height={config.height}
+            axial={true}
+          />
+        </group>
       );
     case "sphere":
-      return <SphereMagnetMesh poles={poles} diameter={config.diameter} />;
+      return (
+        <group rotation={magpylibAxisRotation("sphere")}>
+          <SphereMagnetMesh poles={poles} diameter={config.diameter} />
+        </group>
+      );
     default:
       return null;
   }

@@ -31,6 +31,29 @@ export function GeometryFields({
     />
   )
 
+  const thermalFields = (
+    <>
+      <NumberInput
+        label="Temperature"
+        value={magnet.temperature}
+        onChange={p('temperature')}
+        min={-40}
+        max={180}
+        step={1}
+        unit="°C"
+      />
+      <NumberInput
+        label="Temp coeff"
+        value={magnet.tempCoefficient}
+        onChange={p('tempCoefficient')}
+        min={-1}
+        max={0}
+        step={0.01}
+        unit="%/°C"
+      />
+    </>
+  )
+
   switch (magnet.shape) {
     case 'diametric_cylinder':
     case 'axial_cylinder':
@@ -46,7 +69,7 @@ export function GeometryFields({
             unit="mm"
           />
           <NumberInput
-            label="Height"
+            label="Height (Z)"
             value={magnet.height}
             onChange={p('height' as keyof MagnetParams)}
             min={0.01}
@@ -55,6 +78,7 @@ export function GeometryFields({
             unit="mm"
           />
           {remanenceField}
+          {thermalFields}
         </>
       )
     case 'ring':
@@ -80,7 +104,7 @@ export function GeometryFields({
             unit="mm"
           />
           <NumberInput
-            label="Height"
+            label="Height (Z)"
             value={magnet.height}
             onChange={p('height' as keyof MagnetParams)}
             min={0.01}
@@ -89,13 +113,14 @@ export function GeometryFields({
             unit="mm"
           />
           {remanenceField}
+          {thermalFields}
         </>
       )
     case 'bar':
       return (
         <>
           <NumberInput
-            label="Length"
+            label="Length (X)"
             value={magnet.length}
             onChange={p('length' as keyof MagnetParams)}
             min={0.01}
@@ -104,7 +129,7 @@ export function GeometryFields({
             unit="mm"
           />
           <NumberInput
-            label="Width"
+            label="Width (Y)"
             value={magnet.width}
             onChange={p('width' as keyof MagnetParams)}
             min={0.01}
@@ -113,7 +138,7 @@ export function GeometryFields({
             unit="mm"
           />
           <NumberInput
-            label="Height"
+            label="Height (Z)"
             value={magnet.height}
             onChange={p('height' as keyof MagnetParams)}
             min={0.01}
@@ -122,6 +147,7 @@ export function GeometryFields({
             unit="mm"
           />
           {remanenceField}
+          {thermalFields}
         </>
       )
     case 'sphere':
@@ -137,6 +163,7 @@ export function GeometryFields({
             unit="mm"
           />
           {remanenceField}
+          {thermalFields}
         </>
       )
   }

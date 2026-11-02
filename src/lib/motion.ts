@@ -18,12 +18,30 @@ function axisUnit(axis: "x" | "y" | "z"): THREE.Vector3 {
   return new THREE.Vector3(0, 0, 1);
 }
 
-/** Rest offset for hinge/rotate arm: along +X in the plane perpendicular to the axis. */
+/**
+ * Rest offset for hinge arm at 0° (perpendicular to the hinge axis).
+ * Axis Y/Z → along +X; axis X → along +Y.
+ *
+ * UI hinge angles are lid-style: 0° = closed (rest), positive = open toward
+ * Magpylib +Z when the pin allows (X or Y). Convert with {@link hingeUiToRhAngle}
+ * before applying a right-hand rotvec.
+ */
 function restOffset(axis: "x" | "y" | "z", armLengthMm: number): THREE.Vector3 {
   const L = mmToWorld(armLengthMm);
   if (axis === "x") return new THREE.Vector3(0, L, 0);
   if (axis === "y") return new THREE.Vector3(L, 0, 0);
   return new THREE.Vector3(L, 0, 0);
+}
+
+/**
+ * Map lid-style UI hinge angle → right-hand rotation about the pin.
+ * Axis Y needs a sign flip so +UI still opens toward +Z; X/Z are 1:1.
+ */
+export function hingeUiToRhAngle(
+  axis: "x" | "y" | "z",
+  uiAngleDeg: number,
+): number {
+  return axis === "y" ? -uiAngleDeg : uiAngleDeg;
 }
 
 function bounceU(t: number): number {
@@ -82,26 +100,28 @@ export function evaluateMotionPose(animation: AnimationParams, t: number): Pose 
     };
   }
 
-  // hinge: magnet rides an arc about pivot
+  // hinge: magnet rides an arc about pivot (UI angle → RH for pose)
   const pathU = animation.bounce ? bounceU(u) : u;
-  const angleDeg =
+  const uiAngleDeg =
     animation.startAngle + (animation.endAngle - animation.startAngle) * pathU;
-  const angleRad = THREE.MathUtils.degToRad(angleDeg);
+  const rhAngleRad = THREE.MathUtils.degToRad(
+    hingeUiToRhAngle(animation.axis, uiAngleDeg),
+  );
   const pivot = new THREE.Vector3(
     mmToWorld(animation.pivot.x),
     mmToWorld(animation.pivot.y),
     mmToWorld(animation.pivot.z),
   );
   const offset = restOffset(animation.axis, animation.armLength);
-  offset.applyAxisAngle(axisUnit(animation.axis), angleRad);
+  offset.applyAxisAngle(axisUnit(animation.axis), rhAngleRad);
   const pos = pivot.clone().add(offset);
 
   const rotation: [number, number, number] =
     animation.axis === "x"
-      ? [angleRad, 0, 0]
+      ? [rhAngleRad, 0, 0]
       : animation.axis === "y"
-        ? [0, angleRad, 0]
-        : [0, 0, angleRad];
+        ? [0, rhAngleRad, 0]
+        : [0, 0, rhAngleRad];
 
   return {
     position: [pos.x, pos.y, pos.z],

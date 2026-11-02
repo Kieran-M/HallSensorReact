@@ -11,6 +11,8 @@ interface PositionRunnerProps {
   sensingAxis: string;
   digital: boolean;
   onSeek: (frame: number) => void;
+  /** Slim scrubber for the results sidebar (no tall readout grid). */
+  compact?: boolean;
 }
 
 function Sparkline({
@@ -77,6 +79,7 @@ export function PositionRunner({
   sensingAxis,
   digital,
   onSeek,
+  compact = false,
 }: PositionRunnerProps) {
   const frame = Math.min(Math.round(currentFrame), lastFrame);
   const row = dataset[frame];
@@ -93,6 +96,62 @@ export function PositionRunner({
 
   const btn =
     "font-mono text-xs uppercase tracking-wide px-2 py-1 rounded-sm border transition-colors disabled:opacity-35 disabled:cursor-not-allowed";
+
+  if (compact) {
+    return (
+      <div
+        className="flex items-center gap-2 min-w-0"
+        role="region"
+        aria-label="Chart playhead"
+      >
+        <button
+          type="button"
+          className={btn}
+          style={{
+            borderColor: "var(--border)",
+            color: "var(--muted-foreground)",
+          }}
+          disabled={frame <= 0}
+          onClick={() => step(-1)}
+          title="Previous frame"
+          aria-label="Previous frame"
+        >
+          ←
+        </button>
+        <input
+          type="range"
+          min={0}
+          max={lastFrame || 0}
+          step={1}
+          value={frame}
+          onChange={(e) => onSeek(Number(e.target.value))}
+          className="hs-scrubber flex-1 min-w-0"
+          aria-label={`Scrub ${xLabel}`}
+        />
+        <button
+          type="button"
+          className={btn}
+          style={{
+            borderColor: "var(--border)",
+            color: "var(--muted-foreground)",
+          }}
+          disabled={frame >= lastFrame}
+          onClick={() => step(1)}
+          title="Next frame"
+          aria-label="Next frame"
+        >
+          →
+        </button>
+        <div
+          className="font-mono text-xs tabular-nums shrink-0 w-[4.5rem] text-right"
+          style={{ color: "var(--foreground)" }}
+          title={playing ? "Playing" : "Paused"}
+        >
+          {row ? xFmt(row.x) : "—"}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

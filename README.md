@@ -25,6 +25,7 @@ npm run build      # production → dist/
 npm run preview    # serve dist/
 npm run lint
 npm run typecheck
+npm test             # vitest (lib unit tests)
 ```
 
 ## Local full stack
@@ -52,4 +53,11 @@ const { unmount } = mountHallSim(document.getElementById("hallsim-root"));
 
 ## Phase 1 coverage
 
-Linear Sens(VDD), digital Bop/Brp, Chart 2/3, VDD UI, ah49f / ah1711 presets, custom setup, catalog, playback / gizmo / chart zoom, embed-safe ESM.
+Linear Sens(VDD), digital Bop/Brp, Chart 2/3, VDD UI, ah49f / ah1711 presets, custom setup, catalog, playback / gizmo / chart zoom, embed-safe ESM. NdFeB grades (Br from product appendix), multipole bar/ring, linear temp demag of Br. Magpylib evaluation disclaimer on landing, design panel, results, CSV, and PDF.
+
+## Business-unit testing (hosted demo)
+
+Self-guided test docs for reviewers with free access to the cloud demo:
+
+- [docs/PHASE1_TESTER_GUIDE.md](docs/PHASE1_TESTER_GUIDE.md) — full walkthrough, test cases, limitations, feedback template  
+- [docs/PHASE1_TEST_CHECKLIST.md](docs/PHASE1_TEST_CHECKLIST.md) — printable pass/fail checklist

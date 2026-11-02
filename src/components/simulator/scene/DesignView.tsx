@@ -9,6 +9,7 @@ import { PersistentOrbitControls } from "../PersistentOrbitControls";
 import { SimulationPlayback } from "../SimulatorPlayback";
 
 import { useSimulatorStore } from "../../../store/simulatorStore";
+import { WORLD_UP } from "../../../types/camera";
 import { useTheme } from "../../ui/Theme";
 import { mmToWorld } from "../../../lib/utils";
 
@@ -63,6 +64,7 @@ export function DesignView({ active = true }: DesignViewProps) {
           gl={{ antialias: true, powerPreference: "high-performance" }}
           camera={{
             position: cameraView.position,
+            up: WORLD_UP,
             fov: 50,
             near: 0.001,
             far: 1000,
@@ -75,8 +77,9 @@ export function DesignView({ active = true }: DesignViewProps) {
         >
           <color attach="background" args={[canvasBg]} />
           <ambientLight intensity={1.2} />
-          <directionalLight position={[1, 2, 1]} intensity={2.5} />
-          <directionalLight position={[-1, 1, -1]} intensity={1} />
+          {/* Key light from Magpylib +Z (above the XY board plane) */}
+          <directionalLight position={[1, 1, 2]} intensity={2.5} />
+          <directionalLight position={[-1, -0.5, 1]} intensity={1} />
 
           <SimulationPlayback />
           <MotionPathGhost />
@@ -91,8 +94,10 @@ export function DesignView({ active = true }: DesignViewProps) {
             hallType={activePackage?.hallType ?? "linear"}
           />
 
+          {/* Default drei Grid is XZ; rotate onto XY so +Z is board normal / up */}
           <Grid
             infiniteGrid
+            rotation={[Math.PI / 2, 0, 0]}
             args={[1, 1]}
             cellSize={0.005}
             sectionSize={0.05}

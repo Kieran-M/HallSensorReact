@@ -1,4 +1,4 @@
-/** Shared magnet fields. Only remanence + shape dimensions affect B today. */
+/** Shared magnet fields. Br, shape, poles, and temp demag affect B. */
 export interface BaseMagnetParams {
   poles: number;
   material: string;
@@ -61,7 +61,7 @@ const BASE_DEFAULTS: BaseMagnetParams = {
   poles: 2,
   material: "NdFeB",
   materialGrade: "N42",
-  remanence: 1.3,
+  remanence: 1.31,
   temperature: 20,
   tempCoefficient: -0.12,
   coercivity: 995,

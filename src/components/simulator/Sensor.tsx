@@ -11,7 +11,7 @@ interface SensorProps {
 
 /**
  * Approximate Hall IC package meshes by mechanical family.
- * Sensing face is oriented toward +Z (toward magnets in typical presets).
+ * Sensing face is oriented toward Magpylib / world +Z (same frame as magnets).
  */
 export function Sensor({
   position = [0, 0, 0],

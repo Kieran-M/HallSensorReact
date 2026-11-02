@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useSimulatorStore } from "../../store/simulatorStore";
 import { useShallow } from "zustand/shallow";
 import { mmToWorld } from "../../lib/utils";
+import { magpylibAxisRotation } from "../../lib/magpylibFrame";
 import {
   evaluateMotionPose,
   pathHasTranslation,
@@ -21,6 +22,8 @@ const START_COLOR = "#34d399";
 const END_COLOR = "#fbbf24";
 const PIVOT_COLOR = "#94a3b8";
 const GHOST_COLOR = "#c0d0e0";
+/** Match AxisGizmoOverlay: X red, Y green, Z blue — hinge pin along this axis. */
+const HINGE_AXIS_COLOR = { x: "#ef4444", y: "#22c55e", z: "#3b82f6" } as const;
 
 function markerRadius(magnet: MagnetParams): number {
   let mm = 8;
@@ -52,12 +55,13 @@ function GhostBody({
   const geo = useMemo(() => {
     switch (magnet.shape) {
       case "bar":
+        // Magpylib Cuboid (length, width, height) → Three (X, Y, Z)
         return (
           <boxGeometry
             args={[
               mmToWorld(magnet.length),
-              mmToWorld(magnet.height),
               mmToWorld(magnet.width),
+              mmToWorld(magnet.height),
             ]}
           />
         );
@@ -90,18 +94,20 @@ function GhostBody({
   }, [magnet]);
 
   return (
-    <mesh position={pose.position} rotation={pose.rotation} raycast={() => null}>
-      {geo}
-      <meshStandardMaterial
-        color={GHOST_COLOR}
-        transparent
-        opacity={0.16}
-        depthWrite={false}
-        emissive={GHOST_COLOR}
-        emissiveIntensity={0.2}
-        wireframe={false}
-      />
-    </mesh>
+    <group position={pose.position} rotation={pose.rotation} raycast={() => null}>
+      <mesh rotation={magpylibAxisRotation(magnet.shape)} raycast={() => null}>
+        {geo}
+        <meshStandardMaterial
+          color={GHOST_COLOR}
+          transparent
+          opacity={0.16}
+          depthWrite={false}
+          emissive={GHOST_COLOR}
+          emissiveIntensity={0.2}
+          wireframe={false}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -191,6 +197,37 @@ function HingeArc({
   );
 }
 
+/** Drawn pin through the pivot — hinge axis is the axle, not the travel direction. */
+function HingeAxisPin({
+  animation,
+}: {
+  animation: Extract<AnimationParams, { type: "hinge" }>;
+}) {
+  const half = mmToWorld(Math.max(animation.armLength * 0.35, 8));
+  const pivot = new THREE.Vector3(
+    mmToWorld(animation.pivot.x),
+    mmToWorld(animation.pivot.y),
+    mmToWorld(animation.pivot.z),
+  );
+  const axis = new THREE.Vector3(
+    animation.axis === "x" ? 1 : 0,
+    animation.axis === "y" ? 1 : 0,
+    animation.axis === "z" ? 1 : 0,
+  );
+  const a = pivot.clone().addScaledVector(axis, -half);
+  const b = pivot.clone().addScaledVector(axis, half);
+
+  return (
+    <Line
+      points={[a, b]}
+      color={HINGE_AXIS_COLOR[animation.axis]}
+      lineWidth={2.5}
+      transparent
+      opacity={0.9}
+    />
+  );
+}
+
 /**
  * Motion path ghost: centre polyline, start/end markers, hinge pivot,
  * rotate sweep arc, and a faint end-pose body.
@@ -271,7 +308,12 @@ export function MotionPathGhost() {
         <RotationArc animation={animation} radius={r * 4.5} />
       )}
 
-      {animation.type === "hinge" && <HingeArc animation={animation} />}
+      {animation.type === "hinge" && (
+        <>
+          <HingeAxisPin animation={animation} />
+          <HingeArc animation={animation} />
+        </>
+      )}
 
       {/* Start / end markers — coalesce when the centre does not travel (rotate). */}
       {translating ? (

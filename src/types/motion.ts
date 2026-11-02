@@ -29,6 +29,7 @@ export interface RotateMovement {
 /**
  * Arc about a hinge pivot. Rest (angle 0°) places the magnet
  * `armLength` mm from the pivot along +X (or +Y when axis is X).
+ * Angles are lid-style: positive opens toward Magpylib +Z for pins X/Y.
  */
 export interface HingeMovement {
   type: "hinge";
@@ -61,7 +62,7 @@ export const DEFAULT_ROTATE: RotateMovement = {
   endAngle: 360,
 };
 
-/** Doc default arc length = 35° about origin hinge. */
+/** Default lid-style arc about +Y: +35° open above → 0° closed along +X. */
 export const DEFAULT_HINGE: HingeMovement = {
   type: "hinge",
   pivot: { x: 0, y: 0, z: 0 },

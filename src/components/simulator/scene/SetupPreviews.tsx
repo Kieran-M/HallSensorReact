@@ -100,8 +100,7 @@ export function MotionPreview({ type }: { type: MotionType }) {
     );
   }
 
-  // Hinge / arc — ghost arc uses the same angles as the animated arm.
-  // Matches DEFAULT_HINGE sweep (35° → 0°), drawn CCW in SVG (negative angles).
+  // Hinge / arc — DEFAULT_HINGE is +35° open → 0°; SVG Y-down uses −35° to draw up.
   const pivotX = 40;
   const pivotY = 52;
   const arm = 70;

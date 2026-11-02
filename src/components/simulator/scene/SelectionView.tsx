@@ -10,6 +10,7 @@ import {
   DiodesTrademarkNote,
   HallSimBrand,
 } from '../../brand/DiodesMark'
+import { HALLSIM_DISCLAIMER_SHORT } from '../../../lib/disclaimer'
 import { ApiStatusPill } from '../../ui/ApiStatusPill'
 import { ThemeToggle } from '../../ui/Theme'
 import { DynamicPreview } from './PresetPreview'
@@ -310,9 +311,14 @@ export default function Landing() {
                 'color-mix(in srgb, var(--card) 70%, transparent)',
             }}
           >
-            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <HallSimBrand compact />
-              <DiodesTrademarkNote className="sm:max-w-md sm:text-right" />
+            <div className="max-w-6xl mx-auto flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <HallSimBrand compact />
+                <DiodesTrademarkNote className="sm:max-w-md sm:text-right" />
+              </div>
+              <p className="font-mono text-[10px] leading-snug text-(--muted-foreground) max-w-4xl">
+                {HALLSIM_DISCLAIMER_SHORT}
+              </p>
             </div>
           </footer>
         </>

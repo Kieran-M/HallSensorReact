@@ -20,6 +20,7 @@ import { ResponseCharts } from "./ResponseCharts";
 import type { SeriesKey } from "./seriesMeta";
 import { resolveOperateSupply } from "../../lib/sensitivityDisplay";
 import type { SimulationExportContext } from "../../lib/exportSimulation";
+import { HALLSIM_DISCLAIMER_SHORT } from "../../lib/disclaimer";
 
 interface GraphPanelProps {
   dataset: FieldSample[];
@@ -95,13 +96,11 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
     defaultVisibility(sensingAxis, digital),
   );
 
-  // When package type/axis changes, re-focus Chart 2 on the sensing axis.
   useEffect(() => {
     setVisible(defaultVisibility(sensingAxis, digital));
   }, [sensingAxis, digital, sensorPackage?.id]);
 
   const lastFrame = Math.max(frameCount - 1, 0);
-  const done = !playing && currentFrame >= lastFrame && dataset.length > 0;
   const vref = sensorPackage?.vref ?? (digital ? null : supply / 2);
 
   const liveIdx = dataset.length
@@ -155,49 +154,37 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
 
   return (
     <aside
-      className="w-full h-full flex flex-col min-h-0 bg-[var(--card)]"
+      className="w-full h-full flex flex-col min-h-0 overflow-hidden bg-[var(--card)]"
       style={{ backgroundColor: "var(--card)" }}
     >
       <div
-        className="p-4 shrink-0 space-y-3"
+        className="px-3 py-2 shrink-0 space-y-2"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
-        <div>
-          <div
-            className="font-mono text-xs uppercase tracking-widest mb-0.5"
-            style={{ color: "var(--muted-foreground)" }}
-          >
-            Output
-          </div>
-          <div
-            className="font-mono text-sm font-semibold"
-            style={{ color: "var(--foreground)" }}
-          >
-            Sensor Response
-          </div>
-          {sensorPackage && (
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="min-w-0">
             <div
-              className="font-mono text-xs mt-1 truncate"
-              style={{ color: "var(--muted-foreground)" }}
-              title={`${sensorPackage.partNumber} · ${sensorPackage.hallType}${
-                digital && sensorPackage.bopTypGauss != null
-                  ? ` · Bop ${sensorPackage.bopTypGauss} G`
-                  : ` · sense ${sensingAxis.toUpperCase()}`
-              }`}
+              className="font-mono text-sm font-semibold truncate"
+              style={{ color: "var(--foreground)" }}
             >
-              {sensorPackage.partNumber} · {sensorPackage.hallType}
-              {digital &&
-                sensorPackage.bopTypGauss != null &&
-                ` · Bop ${sensorPackage.bopTypGauss} G`}
-              {!digital && ` · sense ${sensingAxis.toUpperCase()}`}
+              Sensor Response
             </div>
-          )}
+            {sensorPackage && (
+              <div
+                className="font-mono text-xs truncate"
+                style={{ color: "var(--muted-foreground)" }}
+                title={`${sensorPackage.partNumber} · ${sensorPackage.hallType}`}
+              >
+                {sensorPackage.partNumber} · {sensorPackage.hallType}
+              </div>
+            )}
+          </div>
+          <ExportButtons context={exportContext} compact />
         </div>
-
-        <ExportButtons context={exportContext} />
 
         {dataset.length > 0 ? (
           <PositionRunner
+            compact
             dataset={dataset}
             currentFrame={currentFrame}
             lastFrame={lastFrame}
@@ -211,10 +198,11 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
         ) : null}
       </div>
 
-      <div className="p-4 space-y-4 overflow-y-auto flex-1 min-h-0">
+      {/* Fill remaining height — no nested scroll; charts share space. */}
+      <div className="flex-1 min-h-0 overflow-hidden p-2.5 flex flex-col">
         {dataset.length === 0 ? (
           <div
-            className="rounded-sm p-6 flex flex-col items-center justify-center gap-2 text-center min-h-[16rem]"
+            className="rounded-sm p-6 flex flex-col items-center justify-center gap-2 text-center flex-1"
             style={{
               border: "1px dashed var(--border)",
               backgroundColor:
@@ -251,10 +239,17 @@ export const GraphPanel: FC<GraphPanelProps> = ({ dataset, sensorPackage }) => {
             brpGauss={digital ? (sensorPackage?.brpTypGauss ?? null) : null}
             sensingAxis={sensingAxis}
             summary={summary}
-            showSummary={done}
           />
         )}
       </div>
+
+      <p
+        className="shrink-0 px-3 py-2 font-mono text-[10px] leading-snug border-t border-[var(--border)]"
+        style={{ color: "var(--muted-foreground)" }}
+        title={HALLSIM_DISCLAIMER_SHORT}
+      >
+        {HALLSIM_DISCLAIMER_SHORT}
+      </p>
     </aside>
   );
 };

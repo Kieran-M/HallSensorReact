@@ -35,6 +35,17 @@ function TypeBadge({ type }: { type: HallType }) {
   );
 }
 
+/** Only allow https datasheet links (ignore javascript:/data:/etc.). */
+export function safeHttpsHref(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return null;
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
 export function DatasheetLink({
   url,
   className = "",
@@ -42,10 +53,11 @@ export function DatasheetLink({
   url?: string | null;
   className?: string;
 }) {
-  if (!url) return null;
+  const href = url ? safeHttpsHref(url) : null;
+  if (!href) return null;
   return (
     <a
-      href={url}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}

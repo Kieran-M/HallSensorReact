@@ -4,61 +4,27 @@ import { OrbitControls } from "@react-three/drei";
 import type { Camera } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useSimulatorStore } from "../../store/simulatorStore";
+import { WORLD_UP } from "../../types/camera";
 import {
   cameraBridge,
   cameraSnapRequest,
+  snapSphericalAngles,
   type CameraSnapAxis,
 } from "../../lib/cameraBridge";
 
 /**
- * Snap via OrbitControls spherical angles so `camera.up` stays world +Y.
- * Mutating up for top/bottom views (old lookAt path) left controls in a
- * flipped basis and broke later orbits / snaps.
- *
- * Three.js spherical: polar 0 = +Y, azimuth 0 = +Z, +azimuth toward +X.
- * EPS avoids exact poles where azimuth becomes unstable.
+ * Snap via OrbitControls spherical angles with fixed Magpylib +Z camera.up.
+ * See {@link snapSphericalAngles} for the Z-up θ/φ table.
  */
-const POLE_EPS = 1e-3;
-
-function applyAxisSnap(
+export function applyAxisSnap(
   controls: OrbitControlsImpl,
   camera: Camera,
   snap: CameraSnapAxis,
 ): void {
-  camera.up.set(0, 1, 0);
-
-  switch (snap) {
-    case "x":
-      controls.setAzimuthalAngle(Math.PI / 2);
-      controls.setPolarAngle(Math.PI / 2);
-      break;
-    case "-x":
-      controls.setAzimuthalAngle(-Math.PI / 2);
-      controls.setPolarAngle(Math.PI / 2);
-      break;
-    case "y":
-      controls.setAzimuthalAngle(0);
-      controls.setPolarAngle(POLE_EPS);
-      break;
-    case "-y":
-      controls.setAzimuthalAngle(0);
-      controls.setPolarAngle(Math.PI - POLE_EPS);
-      break;
-    case "z":
-      controls.setAzimuthalAngle(0);
-      controls.setPolarAngle(Math.PI / 2);
-      break;
-    case "-z":
-      controls.setAzimuthalAngle(Math.PI);
-      controls.setPolarAngle(Math.PI / 2);
-      break;
-    case "iso":
-    default:
-      controls.setAzimuthalAngle(Math.PI / 4);
-      controls.setPolarAngle(Math.PI / 3);
-      break;
-  }
-
+  camera.up.set(...WORLD_UP);
+  const { theta, phi } = snapSphericalAngles(snap);
+  controls.setAzimuthalAngle(theta);
+  controls.setPolarAngle(phi);
   controls.update();
 }
 
@@ -74,6 +40,7 @@ export function PersistentOrbitControls() {
   const setCameraView = useSimulatorStore((s) => s.setCameraView);
 
   useEffect(() => {
+    camera.up.set(...WORLD_UP);
     const [px, py, pz] = cameraView.position;
     const [tx, ty, tz] = cameraView.target;
     camera.position.set(px, py, pz);
@@ -115,6 +82,15 @@ export function PersistentOrbitControls() {
   };
 
   useFrame(() => {
+    // Keep up locked — persisted sessions / remounts must not fall back to Y.
+    if (
+      camera.up.x !== WORLD_UP[0] ||
+      camera.up.y !== WORLD_UP[1] ||
+      camera.up.z !== WORLD_UP[2]
+    ) {
+      camera.up.set(...WORLD_UP);
+    }
+
     const controls = controlsRef.current;
     if (controls) {
       cameraBridge.quaternion.copy(camera.quaternion);

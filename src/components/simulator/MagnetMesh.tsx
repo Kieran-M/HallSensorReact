@@ -8,6 +8,7 @@ import {
 } from "../../store/simulatorStore";
 import { useShallow } from "zustand/shallow";
 import { evaluateMotionPose } from "../../lib/motion";
+import { normalizePoles } from "../../lib/magnetPoles";
 import { applyFramePose, playbackFrameRef } from "../../lib/playbackClock";
 import { MagnetGeometry } from "./magnet/geometries";
 
@@ -107,8 +108,7 @@ function LocalAxes({ length }: { length: number }) {
 }
 
 export function Magnet({ config }: { config: MagnetParams }) {
-  // Phase 1: dipole only (field model is a single magnet segment).
-  const poles = 2;
+  const poles = normalizePoles(config.shape, config.poles);
   const groupRef = useRef<THREE.Group>(null);
   const axesLen = useMemo(() => axisLength(config), [config]);
 

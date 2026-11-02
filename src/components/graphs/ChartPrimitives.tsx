@@ -204,32 +204,38 @@ export function GraphCard({
   toggles,
   actions,
   children,
+  fill = false,
 }: {
   title: string;
   subtitle: string;
   toggles?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
+  /** Stretch to parent height (results sidebar — no nested scroll). */
+  fill?: boolean;
 }) {
   return (
     <div
-      className="rounded-sm p-4 flex flex-col gap-3"
+      className={[
+        "rounded-sm p-2.5 flex flex-col gap-1.5 min-h-0",
+        fill ? "flex-1 overflow-hidden" : "",
+      ].join(" ")}
       style={{
         border: "1px solid var(--border)",
         backgroundColor: "var(--background)",
       }}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between min-w-0">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between min-w-0 shrink-0">
         <div className="min-w-0 flex-1">
           <div
-            className="font-mono text-[12px] uppercase tracking-wide truncate"
+            className="font-mono text-xs uppercase tracking-wide truncate"
             style={{ color: "var(--accent)" }}
             title={title}
           >
             {title}
           </div>
           <div
-            className="font-mono text-xs mt-0.5 leading-snug break-words"
+            className="font-mono text-[11px] mt-0.5 leading-snug truncate"
             style={{ color: "var(--muted-foreground)" }}
             title={subtitle}
           >
@@ -240,8 +246,20 @@ export function GraphCard({
           <div className="shrink-0 max-w-full">{actions}</div>
         ) : null}
       </div>
-      {toggles && <div className="flex flex-wrap gap-1.5">{toggles}</div>}
-      {children}
+      {toggles && (
+        <div className="flex flex-wrap gap-1 shrink-0">{toggles}</div>
+      )}
+      <div
+        className={
+          fill ? "relative flex-1 min-h-0 w-full" : "w-full"
+        }
+      >
+        {fill ? (
+          <div className="absolute inset-0">{children}</div>
+        ) : (
+          children
+        )}
+      </div>
     </div>
   );
 }

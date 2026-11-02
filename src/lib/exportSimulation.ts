@@ -2,6 +2,10 @@ import type { FieldSample, ChartXMode } from "./fieldMath";
 import { chartXLabel, chartXUnit } from "./fieldMath";
 import type { SensorPackageInfo } from "../types/simulation";
 import type { AnimationParams, MagnetParams } from "../store/simulatorStore";
+import {
+  HALLSIM_DISCLAIMER_LINES,
+  HALLSIM_DISCLAIMER_SHORT,
+} from "./disclaimer";
 
 export interface SimulationExportContext {
   dataset: FieldSample[];
@@ -57,16 +61,28 @@ function summaryStats(dataset: FieldSample[]) {
   };
 }
 
+/** jsPDF Helvetica is WinAnsi — strip fancy unicode that becomes mojibake. */
+function pdfSafe(text: string): string {
+  return text
+    .replace(/\u2192/g, "->") // →
+    .replace(/\u00B7/g, "-") // ·
+    .replace(/\u2013|\u2014/g, "-") // – —
+    .replace(/\u00B0/g, " deg") // °
+    .replace(/\u03B1/g, "alpha") // α
+    .replace(/\u2018|\u2019/g, "'")
+    .replace(/\u201C|\u201D/g, '"');
+}
+
 function motionSummary(animation: AnimationParams): string {
   if (animation.type === "linear") {
     const s = animation.startPosition;
     const e = animation.endPosition;
-    return `linear (${s.x},${s.y},${s.z}) → (${e.x},${e.y},${e.z}) mm`;
+    return `linear (${s.x},${s.y},${s.z}) -> (${e.x},${e.y},${e.z}) mm`;
   }
   if (animation.type === "rotate") {
-    return `rotate about ${animation.axis} ${animation.startAngle}° → ${animation.endAngle}°`;
+    return `rotate about ${animation.axis} ${animation.startAngle} deg -> ${animation.endAngle} deg`;
   }
-  return `hinge ${animation.axis} arm ${animation.armLength} mm ${animation.startAngle}° → ${animation.endAngle}°${animation.bounce ? " bounce" : ""}`;
+  return `hinge ${animation.axis} arm ${animation.armLength} mm ${animation.startAngle} deg -> ${animation.endAngle} deg${animation.bounce ? " bounce" : ""}`;
 }
 
 /** Full frame table as CSV (UTF-8 with BOM for Excel). */
@@ -94,10 +110,15 @@ export function downloadSimulationCsv(ctx: SimulationExportContext): void {
     `# Sensing axis,${ctx.sensorPackage.sensingAxis}`,
     `# Motion,${csvEscape(motionSummary(ctx.animation))}`,
     `# Magnet,${ctx.magnet.shape} Br=${ctx.magnet.remanence} T ${ctx.magnet.materialGrade}`,
+    `# Temperature (°C),${ctx.magnet.temperature}`,
+    `# Temp coeff (%/°C),${ctx.magnet.tempCoefficient}`,
+    `# Poles,${ctx.magnet.poles}`,
     `# Duration (s),${ctx.duration}`,
     `# Sample rate (fps),${ctx.fps}`,
     `# Chart X,${chartXLabel(ctx.xMode)} (${xUnit})`,
     `# Frames,${ctx.dataset.length}`,
+    `#`,
+    ...HALLSIM_DISCLAIMER_LINES.map((line) => `# ${line}`),
     `#`,
   ];
 
@@ -159,28 +180,68 @@ export async function downloadSimulationPdf(
   doc.setTextColor(60, 60, 60);
 
   const pkg = ctx.sensorPackage;
-  const lines: string[] = [
-    `Generated: ${new Date().toLocaleString()}`,
-    `Part: ${pkg.partNumber}  ·  ${pkg.hallType}  ·  sense ${pkg.sensingAxis.toUpperCase()}`,
-    `Description: ${pkg.description}`,
-    `Supply VDD: ${ctx.supplyV.toFixed(2)} V`,
-    pkg.bopTypGauss != null
-      ? `Thresholds: Bop ${pkg.bopTypGauss} G · Brp ${pkg.brpTypGauss ?? "—"} G`
-      : null,
-    `Preset: ${ctx.presetLabel ?? "Custom"}`,
-    `Magnet: ${ctx.magnet.shape} · ${ctx.magnet.materialGrade} · Br ${ctx.magnet.remanence} T`,
-    `Motion: ${motionSummary(ctx.animation)}`,
-    `Run: ${ctx.duration} s @ ${ctx.fps} fps · ${ctx.dataset.length} frames`,
-    `Chart X: ${chartXLabel(ctx.xMode)} (${xUnit})`,
-  ].filter((v): v is string => v != null);
+  const metaRows: [string, string][] = [
+    ["Generated", new Date().toLocaleString()],
+    [
+      "Part",
+      `${pkg.partNumber} / ${pkg.hallType} / sense ${pkg.sensingAxis.toUpperCase()}`,
+    ],
+    ["Description", pkg.description],
+    ["Supply VDD", `${ctx.supplyV.toFixed(2)} V`],
+  ];
+  if (pkg.bopTypGauss != null) {
+    metaRows.push([
+      "Thresholds",
+      `Bop ${pkg.bopTypGauss} G / Brp ${pkg.brpTypGauss ?? "-"} G`,
+    ]);
+  }
+  metaRows.push(
+    ["Preset", ctx.presetLabel ?? "Custom"],
+    [
+      "Magnet",
+      `${ctx.magnet.shape} / ${ctx.magnet.materialGrade} / Br ${ctx.magnet.remanence} T / poles ${ctx.magnet.poles}`,
+    ],
+    [
+      "Thermal",
+      `${ctx.magnet.temperature} deg C / temp coeff ${ctx.magnet.tempCoefficient} %/deg C`,
+    ],
+    ["Motion", motionSummary(ctx.animation)],
+    [
+      "Run",
+      `${ctx.duration} s @ ${ctx.fps} fps / ${ctx.dataset.length} frames`,
+    ],
+    ["Chart X", `${chartXLabel(ctx.xMode)} (${xUnit})`],
+  );
 
-  for (const line of lines) {
-    const wrapped = doc.splitTextToSize(line, 210 - margin * 2);
-    doc.text(wrapped, margin, y);
-    y += wrapped.length * 4.2;
+  const labelWidth = 28;
+  const valueWidth = 210 - margin * 2 - labelWidth;
+  for (const [label, value] of metaRows) {
+    doc.setFont("helvetica", "bold");
+    doc.text(pdfSafe(`${label}:`), margin, y);
+    doc.setFont("helvetica", "normal");
+    const wrapped = doc.splitTextToSize(pdfSafe(value), valueWidth);
+    doc.text(wrapped, margin + labelWidth, y);
+    y += Math.max(1, wrapped.length) * 4.2;
   }
 
-  y += 4;
+  y += 3;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(0, 90, 156);
+  doc.text("Disclaimer", margin, y);
+  y += 4.5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(80, 80, 80);
+  {
+    const wrapped = doc.splitTextToSize(
+      pdfSafe(HALLSIM_DISCLAIMER_SHORT),
+      210 - margin * 2,
+    );
+    doc.text(wrapped, margin, y);
+    y += wrapped.length * 3.6 + 3;
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(0, 90, 156);
@@ -190,7 +251,9 @@ export async function downloadSimulationPdf(
   doc.setFontSize(9);
   doc.setTextColor(40, 40, 40);
   doc.text(
-    `Peak |B| ${stats.peakB.toFixed(1)} G   ·   Min |B| ${stats.minB.toFixed(1)} G   ·   Vout ${stats.vmin.toFixed(3)}–${stats.vmax.toFixed(3)} V`,
+    pdfSafe(
+      `Peak |B| ${stats.peakB.toFixed(1)} G  /  Min |B| ${stats.minB.toFixed(1)} G  /  Vout ${stats.vmin.toFixed(3)}-${stats.vmax.toFixed(3)} V`,
+    ),
     margin,
     y,
   );
@@ -243,7 +306,7 @@ export async function downloadSimulationPdf(
       doc.setFontSize(7);
       doc.setTextColor(120, 120, 120);
       doc.text(
-        "HallSim · Diodes Incorporated — for evaluation use. Full data also available as CSV.",
+        "HallSim · Magpylib ideal-magnet model · evaluation only · CSV also available",
         margin,
         297 - 8,
       );

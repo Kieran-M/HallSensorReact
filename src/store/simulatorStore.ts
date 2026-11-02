@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getPreset } from "../lib/presets";
+import { normalizePoles } from "../lib/magnetPoles";
 import { cancelSmoothSeek, syncPlaybackFrame } from "../lib/playbackCursor";
 import type {
   SensorPackageInfo,
@@ -157,26 +158,37 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
   cameraView: DEFAULT_CAMERA_VIEW,
   setCameraView: (cameraView) => set({ cameraView }),
   setMagnetShape: (shape) =>
-    set((state) => ({
-      magnet: {
+    set((state) => {
+      const next = {
         ...SHAPE_DEFAULTS[shape],
-        poles: 2,
         material: state.magnet.material,
         materialGrade: state.magnet.materialGrade,
         remanence: state.magnet.remanence,
         temperature: state.magnet.temperature,
         tempCoefficient: state.magnet.tempCoefficient,
         coercivity: state.magnet.coercivity,
-      },
-    })),
+        poles: state.magnet.poles,
+      };
+      return {
+        magnet: {
+          ...next,
+          poles: normalizePoles(shape, next.poles),
+        },
+      };
+    }),
 
   setMagnetParam: (key, value) =>
-    set((state) => ({
-      magnet: {
-        ...state.magnet,
-        [key]: key === "poles" ? 2 : value,
-      },
-    })),
+    set((state) => {
+      if (key === "poles") {
+        return {
+          magnet: {
+            ...state.magnet,
+            poles: normalizePoles(state.magnet.shape, Number(value)),
+          },
+        };
+      }
+      return { magnet: { ...state.magnet, [key]: value } };
+    }),
 
   setAnimation: (animation) => set({ animation }),
 
@@ -223,7 +235,7 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     const preset = getPreset(presetId);
     if (!preset) return false;
     set({
-      magnet: { ...preset.magnet, poles: 2 },
+      magnet: preset.magnet,
       sensor: preset.sensor,
       animation: preset.animation,
       duration: preset.duration,

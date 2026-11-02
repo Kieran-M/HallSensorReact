@@ -8,6 +8,13 @@
       name="description"
       content="HallSim by Diodes Incorporated — interactive Hall-effect sensor and magnet field simulator for evaluating Diodes linear and digital sensors."
     />
+    <!-- Demo CSP: allow self + https API/datasheets; inline script is the theme boot only. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; connect-src 'self' http://127.0.0.1:* http://localhost:* https: ws://127.0.0.1:* ws://localhost:* wss:;"
+    />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="no-referrer" />
     <title>HallSim · Diodes Incorporated</title>
     <script>
       (function () {

@@ -49,7 +49,6 @@ interface ResponseChartsProps {
     vmax: number;
     vmin: number;
   } | null;
-  showSummary: boolean;
 }
 
 /** Field + device-output charts per SRS §10. */
@@ -68,7 +67,6 @@ export function ResponseCharts({
   brpGauss = null,
   sensingAxis = "z",
   summary,
-  showSummary,
 }: ResponseChartsProps) {
   const xUnit = chartXUnit(xMode);
   const xTitle = chartXLabel(xMode);
@@ -87,8 +85,9 @@ export function ResponseCharts({
   );
 
   return (
-    <>
+    <div className="flex flex-col gap-2 flex-1 min-h-0 h-full overflow-hidden">
       <GraphCard
+        fill
         title="Magnetic Field Density"
         subtitle={`vs ${xTitle} · Flux density (G) · sense ${sensingAxis.toUpperCase()}`}
         actions={
@@ -141,10 +140,10 @@ export function ResponseCharts({
       >
         <div
           onWheel={fieldZoom.onWheel}
-          className="select-none"
+          className="select-none h-full w-full"
           title="Scroll to zoom · drag to select · double-click reset"
         >
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={dataset}
               margin={CHART_MARGIN}
@@ -259,6 +258,7 @@ export function ResponseCharts({
       </GraphCard>
 
       <GraphCard
+        fill
         title="Device Output"
         subtitle={`vs ${xTitle} · ${partNumber ?? "sensor"} · ${supply} V${digital ? " · digital" : ""}`}
         actions={
@@ -290,10 +290,10 @@ export function ResponseCharts({
       >
         <div
           onWheel={outputZoom.onWheel}
-          className="select-none"
+          className="select-none h-full w-full"
           title="Scroll to zoom · drag to select · double-click reset"
         >
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={dataset}
               margin={CHART_MARGIN}
@@ -366,45 +366,43 @@ export function ResponseCharts({
         </div>
       </GraphCard>
 
-      {showSummary && summary && (
+      {summary && (
         <div
-          className="rounded-sm p-4"
+          className="rounded-sm px-2.5 py-1.5 shrink-0 flex flex-wrap items-center gap-x-3 gap-y-0.5"
           style={{
             border: "1px solid rgba(52,211,153,0.25)",
             backgroundColor: "rgba(52,211,153,0.06)",
           }}
         >
           <div
-            className="font-mono text-xs uppercase tracking-widest mb-3"
+            className="font-mono text-[10px] uppercase tracking-widest"
             style={{ color: "#34d399" }}
           >
-            Simulation Complete
+            Summary
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: "Peak |B|", value: `${summary.peakB.toFixed(1)} G` },
-              { label: "Min |B|", value: `${summary.minB.toFixed(1)} G` },
-              { label: "Vout max", value: `${summary.vmax.toFixed(3)} V` },
-              { label: "Vout min", value: `${summary.vmin.toFixed(3)} V` },
-            ].map((s) => (
-              <div key={s.label}>
-                <div
-                  className="font-mono text-xs uppercase tracking-widest"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  {s.label}
-                </div>
-                <div
-                  className="font-mono text-[12px] mt-0.5"
-                  style={{ color: "var(--foreground)" }}
-                >
-                  {s.value}
-                </div>
-              </div>
-            ))}
-          </div>
+          {[
+            { label: "Peak |B|", value: `${summary.peakB.toFixed(1)} G` },
+            { label: "Min |B|", value: `${summary.minB.toFixed(1)} G` },
+            { label: "Vout max", value: `${summary.vmax.toFixed(3)} V` },
+            { label: "Vout min", value: `${summary.vmin.toFixed(3)} V` },
+          ].map((s) => (
+            <div key={s.label} className="flex items-baseline gap-1">
+              <span
+                className="font-mono text-[10px] uppercase tracking-wide"
+                style={{ color: "var(--muted-foreground)" }}
+              >
+                {s.label}
+              </span>
+              <span
+                className="font-mono text-xs tabular-nums"
+                style={{ color: "var(--foreground)" }}
+              >
+                {s.value}
+              </span>
+            </div>
+          ))}
         </div>
       )}
-    </>
+    </div>
   );
 }

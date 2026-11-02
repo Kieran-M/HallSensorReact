@@ -256,9 +256,9 @@ export function DesignPage() {
               mobileGraphsOn
                 ? "max-lg:opacity-100 max-lg:visible max-lg:z-[2]"
                 : "max-lg:opacity-0 max-lg:invisible max-lg:pointer-events-none max-lg:z-0",
-              /* Desktop: fixed-width sibling — never absolute, never overlaps scene */
+              /* Desktop: wider results sidebar so charts aren't cramped */
               "lg:relative lg:z-auto lg:opacity-100 lg:visible lg:pointer-events-auto",
-              "lg:w-[28rem] xl:w-[32rem] 2xl:w-[36rem] min-[2000px]:w-[40rem] lg:shrink-0",
+              "lg:w-[min(42vw,34rem)] xl:w-[min(44vw,40rem)] 2xl:w-[42rem] min-[2000px]:w-[46rem] lg:shrink-0",
             ].join(" ")}
             aria-hidden={graphsAriaHidden}
           >

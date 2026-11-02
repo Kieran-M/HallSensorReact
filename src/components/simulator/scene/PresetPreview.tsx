@@ -264,8 +264,8 @@ export function DynamicPreview({ id }: { id: string }) {
     const pivotX = 28;
     const pivotY = 58;
     const arm = 48;
-    // Match magnet swing: −35° → 0° (SVG clockwise-positive, Y-down).
-    const startDeg = -35;
+    // UI hinge is +55°→0° open-up; SVG Y-down mirrors that as −55°→0°.
+    const startDeg = -55;
     const endDeg = 0;
     const tip = (deg: number) => {
       const a = (deg * Math.PI) / 180;

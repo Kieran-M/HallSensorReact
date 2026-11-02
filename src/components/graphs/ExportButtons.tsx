@@ -7,16 +7,16 @@ import {
 
 export function ExportButtons({
   context,
+  compact = false,
 }: {
   context: SimulationExportContext | null;
+  /** Single-row CSV/PDF actions for the results sidebar chrome. */
+  compact?: boolean;
 }) {
   const [busy, setBusy] = useState<"csv" | "pdf" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!context || context.dataset.length === 0) return null;
-
-  const frames = context.dataset.length;
-  const part = context.sensorPackage.partNumber;
 
   const onCsv = () => {
     setError(null);
@@ -41,6 +41,57 @@ export function ExportButtons({
       setBusy(null);
     }
   };
+
+  const frames = context.dataset.length;
+  const part = context.sensorPackage.partNumber;
+
+  if (compact) {
+    return (
+      <div className="shrink-0 flex flex-col items-end gap-1">
+        <div
+          className="flex items-center gap-1.5"
+          role="group"
+          aria-label="Download simulation results"
+        >
+          <button
+            type="button"
+            disabled={busy != null}
+            onClick={onCsv}
+            title="CSV spreadsheet — full frame table"
+            className="font-mono text-xs uppercase tracking-wide px-2.5 py-1.5 rounded-sm border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              borderColor: "var(--border)",
+              color: "var(--foreground)",
+              backgroundColor: "var(--background)",
+            }}
+          >
+            {busy === "csv" ? "…" : "CSV"}
+          </button>
+          <button
+            type="button"
+            disabled={busy != null}
+            onClick={() => void onPdf()}
+            title="PDF report — setup summary + data"
+            className="font-mono text-xs uppercase tracking-wide px-2.5 py-1.5 rounded-sm border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--accent) 50%, var(--border))",
+              color: "var(--accent)",
+              backgroundColor:
+                "color-mix(in srgb, var(--accent) 12%, transparent)",
+            }}
+          >
+            {busy === "pdf" ? "…" : "PDF"}
+          </button>
+        </div>
+        {error && (
+          <p className="font-mono text-xs text-red-400 leading-snug max-w-[12rem] text-right">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

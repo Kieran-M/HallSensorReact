@@ -4,6 +4,7 @@ import type { MagnetParams, MagnetShape } from '../../types/magnet'
 import { useApiHealth } from '../../hooks/useApiHealth'
 import { useSimulation } from '../../hooks/useSimulation'
 import { Accordion } from './Accordion'
+import { NumberInput } from './inputs/NumberInput'
 import { SelectInput } from './inputs/SelectInput'
 import { GeometryFields } from './panel/GeometryFields'
 import { MotionFields } from './panel/MotionFields'
@@ -12,6 +13,13 @@ import {
   getMagnetMaterial,
   gradesForMaterial,
 } from '../../lib/magnetCatalog'
+import {
+  normalizePoles,
+  polesEditable,
+  polesHint,
+  polesStep,
+} from '../../lib/magnetPoles'
+import { HALLSIM_DISCLAIMER_SHORT } from '../../lib/disclaimer'
 import { MATERIALS, SHAPES } from './panel/options'
 import { XYZGroup } from './panel/XYZGroup'
 
@@ -105,18 +113,33 @@ export function SidePanel() {
               if (grade) setMagnetParam('remanence', grade.remanenceT)
             }}
           />
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="font-mono text-sm uppercase tracking-wide text-[var(--muted-foreground)]">
-              No. of Poles
-            </span>
-            <span className="font-mono text-sm tabular-nums text-[var(--foreground)]">
-              2 (dipole)
-            </span>
-          </div>
+          {polesEditable(magnet.shape) ? (
+            <NumberInput
+              label="No. of Poles"
+              value={magnet.poles}
+              onChange={(v) =>
+                setMagnetParam(
+                  'poles',
+                  normalizePoles(magnet.shape, v) as MagnetParams['poles'],
+                )
+              }
+              min={2}
+              max={64}
+              step={polesStep(magnet.shape)}
+            />
+          ) : (
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <span className="font-mono text-sm uppercase tracking-wide text-[var(--muted-foreground)]">
+                No. of Poles
+              </span>
+              <span className="font-mono text-sm tabular-nums text-[var(--foreground)]">
+                2 (dipole)
+              </span>
+            </div>
+          )}
           <p className="font-mono text-sm text-[var(--muted-foreground)] leading-relaxed">
-            Material and grade set typical Br and temp coefficient (editable
-            under Geometry). Phase 1 models a 2-pole magnet; the field uses Br
-            and shape.
+            Material and grade set typical Br and temp coefficient.{" "}
+            {polesHint(magnet.shape)} Field uses Br, shape, and poles.
           </p>
         </Accordion>
 
@@ -159,6 +182,8 @@ export function SidePanel() {
         >
           <MotionFields
             animation={animation}
+            magnet={magnet}
+            sensorZ={sensor.z}
             setMotionType={setMotionType}
             patchAnimation={patchAnimation}
             duration={duration}
@@ -192,6 +217,12 @@ export function SidePanel() {
         <p className="font-mono text-sm text-[var(--muted-foreground)] text-center leading-snug break-words px-1">
           {magnet.shape} · {magnet.materialGrade} · Br{" "}
           {magnet.remanence.toFixed(2)} T
+        </p>
+        <p
+          className="font-mono text-[10px] text-[var(--muted-foreground)] text-center leading-snug px-1"
+          title={HALLSIM_DISCLAIMER_SHORT}
+        >
+          {HALLSIM_DISCLAIMER_SHORT}
         </p>
       </div>
     </aside>

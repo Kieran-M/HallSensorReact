@@ -22,7 +22,7 @@ export const AXES: { label: string; value: MotionAxis }[] = [
   { label: 'Z', value: 'z' },
 ]
 
-/** TIMSS / Magnet Input Parameters shapes. */
+/** Supported magnet shapes. */
 export const SHAPES: { label: string; value: MagnetShape }[] = [
   { label: 'Bar', value: 'bar' },
   { label: 'Diametric Cylinder', value: 'diametric_cylinder' },
