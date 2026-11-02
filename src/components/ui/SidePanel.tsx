@@ -14,10 +14,10 @@ import {
   gradesForMaterial,
 } from '../../lib/magnetCatalog'
 import {
-  normalizePoles,
   polesEditable,
   polesHint,
   polesStep,
+  stepPoles,
 } from '../../lib/magnetPoles'
 import { HALLSIM_DISCLAIMER_SHORT } from '../../lib/disclaimer'
 import { MATERIALS, SHAPES } from './panel/options'
@@ -120,7 +120,11 @@ export function SidePanel() {
               onChange={(v) =>
                 setMagnetParam(
                   'poles',
-                  normalizePoles(magnet.shape, v) as MagnetParams['poles'],
+                  stepPoles(
+                    magnet.shape,
+                    magnet.poles,
+                    v,
+                  ) as MagnetParams['poles'],
                 )
               }
               min={2}

@@ -19,9 +19,10 @@ export function normalizePoles(shape: MagnetShape, poles: number): number {
   }
 
   if (shape === "axial_ring") {
-    if (n === 2) return 2;
-    n = Math.max(4, n - (n % 4));
-    return Math.min(n, 64);
+    if (n <= 2) return 2;
+    // Nearest multiple of 4 (not floor) so steppers can move past 4 → 8.
+    const rounded = Math.round(n / 4) * 4;
+    return Math.min(64, Math.max(4, rounded));
   }
 
   // bar + ring
@@ -36,6 +37,34 @@ export function polesEditable(shape: MagnetShape): boolean {
 /** Spinner step that lands on valid pole counts for the shape. */
 export function polesStep(shape: MagnetShape): number {
   return shape === "axial_ring" ? 4 : 2;
+}
+
+/**
+ * Apply a spinner / typed value, nudging when HTML step + snap would stick
+ * (e.g. axial ring at 4 with step 4 / min 2, or floor-snap loops).
+ */
+export function stepPoles(
+  shape: MagnetShape,
+  current: number,
+  requested: number,
+): number {
+  const prev = normalizePoles(shape, current);
+  if (!Number.isFinite(requested)) return prev;
+
+  if (shape === "axial_ring") {
+    if (prev === 2 && requested > current) return 4;
+    if (prev === 4 && requested < current) return 2;
+  }
+
+  let next = normalizePoles(shape, requested);
+  if (next === prev && requested !== current) {
+    const step = polesStep(shape);
+    next = normalizePoles(
+      shape,
+      prev + (requested > current ? step : -step),
+    );
+  }
+  return next;
 }
 
 export function polesHint(shape: MagnetShape): string {
