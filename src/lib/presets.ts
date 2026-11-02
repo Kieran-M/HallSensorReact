@@ -206,7 +206,7 @@ export const PRESETS: Record<string, PresetSetup> = {
       label: "Rotation or Spin (Ring)",
       category: "Rotary",
       description:
-        "N42 12-pole ring (OD 16 / ID 10 × 2.5 mm). Sensor under the rim at r ≈ 6.5 mm so Z-axis Hall sees 12 Bz cycles per turn (AH49F).",
+        "N42 12-pole ring (OD 12 / ID 7 × 2.5 mm). Sensor under the rim at r ≈ 4.75 mm so Z-axis Hall sees 12 Bz cycles per turn (AH49F).",
       fieldStrength: "tens of mT under the rim",
       waveform: "12-cycle periodic Bz",
       magnetType: "Ring",
@@ -216,12 +216,12 @@ export const PRESETS: Record<string, PresetSetup> = {
       ...N42,
       shape: "ring",
       poles: 12,
-      outerDiameter: 16,
-      innerDiameter: 10,
+      outerDiameter: 12,
+      innerDiameter: 7,
       height: 2.5,
     },
-    // Under mid-wall: (OD+ID)/4 = 6.5 mm — centre of hole has ~0 field for radial multipole
-    sensor: { x: 6.5, y: 0, z: 0 },
+    // Under mid-wall: (OD+ID)/4 = 4.75 mm — hole centre is ~0 for radial multipole
+    sensor: { x: 4.75, y: 0, z: 0 },
     animation: {
       type: "rotate",
       // Face gap ≈ 2.25 mm → centre z = 2.25 + 2.5/2 = 3.5 mm

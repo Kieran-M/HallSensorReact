@@ -67,33 +67,38 @@ const BASE_DEFAULTS: BaseMagnetParams = {
   coercivity: 995,
 };
 
+/**
+ * Default sizes when switching shape in the UI — kept on the small Hall-demo
+ * scale (few mm), not bulk stock magnets.
+ */
 export const SHAPE_DEFAULTS: Record<MagnetShape, MagnetParams> = {
-  bar: { ...BASE_DEFAULTS, shape: "bar", length: 20, width: 10, height: 5 },
+  // ~same scale as the Ø5×2.5 mm axial puck presets
+  bar: { ...BASE_DEFAULTS, shape: "bar", length: 5, width: 3, height: 2 },
   axial_cylinder: {
     ...BASE_DEFAULTS,
     shape: "axial_cylinder",
-    outerDiameter: 10,
-    height: 5,
+    outerDiameter: 5,
+    height: 2.5,
   },
   diametric_cylinder: {
     ...BASE_DEFAULTS,
     shape: "diametric_cylinder",
-    outerDiameter: 10,
-    height: 5,
+    outerDiameter: 6,
+    height: 2.5,
   },
   ring: {
     ...BASE_DEFAULTS,
     shape: "ring",
-    outerDiameter: 10,
-    innerDiameter: 5,
-    height: 5,
+    outerDiameter: 12,
+    innerDiameter: 7,
+    height: 2.5,
   },
   axial_ring: {
     ...BASE_DEFAULTS,
     shape: "axial_ring",
-    outerDiameter: 10,
-    innerDiameter: 5,
-    height: 5,
+    outerDiameter: 12,
+    innerDiameter: 7,
+    height: 2.5,
   },
-  sphere: { ...BASE_DEFAULTS, shape: "sphere", diameter: 10 },
+  sphere: { ...BASE_DEFAULTS, shape: "sphere", diameter: 5 },
 };
