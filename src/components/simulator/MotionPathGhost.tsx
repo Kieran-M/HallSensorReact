@@ -203,11 +203,22 @@ function HingeAxisPin({
 }: {
   animation: Extract<AnimationParams, { type: "hinge" }>;
 }) {
-  const half = mmToWorld(Math.max(animation.armLength * 0.35, 8));
+  const ox = animation.originPosition?.x ?? animation.armLength ?? 0;
+  const oy = animation.originPosition?.y ?? 0;
+  const oz = animation.originPosition?.z ?? 0;
+  const px = animation.pivot?.x ?? 0;
+  const py = animation.pivot?.y ?? 0;
+  const pz = animation.pivot?.z ?? 0;
+  const arm = Math.max(
+    Math.hypot(ox - px, oy - py, oz - pz),
+    animation.armLength ?? 0,
+    8,
+  );
+  const half = mmToWorld(Math.max(arm * 0.35, 8));
   const pivot = new THREE.Vector3(
-    mmToWorld(animation.pivot.x),
-    mmToWorld(animation.pivot.y),
-    mmToWorld(animation.pivot.z),
+    mmToWorld(px),
+    mmToWorld(py),
+    mmToWorld(pz),
   );
   const axis = new THREE.Vector3(
     animation.axis === "x" ? 1 : 0,
@@ -281,9 +292,9 @@ export function MotionPathGhost() {
   const pivot =
     animation.type === "hinge"
       ? ([
-          mmToWorld(animation.pivot.x),
-          mmToWorld(animation.pivot.y),
-          mmToWorld(animation.pivot.z),
+          mmToWorld(animation.pivot?.x ?? 0),
+          mmToWorld(animation.pivot?.y ?? 0),
+          mmToWorld(animation.pivot?.z ?? 0),
         ] as const)
       : null;
 

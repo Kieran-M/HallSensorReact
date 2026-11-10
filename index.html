@@ -8,10 +8,14 @@
       name="description"
       content="HallSim by Diodes Incorporated — interactive Hall-effect sensor and magnet field simulator for evaluating Diodes linear and digital sensors."
     />
-    <!-- Demo CSP: allow self + https API/datasheets; inline script is the theme boot only. -->
+    <!--
+      Demo CSP via <meta>. Note: frame-ancestors (and sandbox/report-*) are
+      ignored in meta — set those on the HTTP response if clickjacking locks
+      are required for a given host.
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; connect-src 'self' http://127.0.0.1:* http://localhost:* https: ws://127.0.0.1:* ws://localhost:* wss:;"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; img-src 'self' data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' http://127.0.0.1:* http://localhost:* https: ws://127.0.0.1:* ws://localhost:* wss:;"
     />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta name="referrer" content="no-referrer" />

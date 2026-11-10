@@ -16,6 +16,10 @@ import {
 } from "../../../lib/sensitivityDisplay";
 import { useSimulatorStore } from "../../../store/simulatorStore";
 import type { HallType, SensorPackageInfo } from "../../../types/simulation";
+import { resolvePackageVariant } from "../../../types/simulation";
+import { allPackageModels } from "../../../lib/packageModels";
+import { warmPackageThumbs } from "../../../lib/renderPackageThumb";
+import { SelectInput } from "../inputs/SelectInput";
 import { PackageThumb } from "./PackageThumb";
 import { SensorCatalogFilters } from "./SensorCatalogFilters";
 
@@ -72,16 +76,21 @@ export function DatasheetLink({
 function PackageMeta({
   pkg,
   supplyV,
+  packageLabel,
+  outline,
 }: {
   pkg: SensorPackageInfo;
   supplyV: number;
+  packageLabel?: string;
+  outline?: SensorPackageInfo["packageOutline"];
 }) {
   const sensMvG = sensitivityMvPerG(pkg, supplyV);
+  const mechanicalOutline = outline ?? pkg.packageOutline;
   return (
     <div className="font-mono text-sm text-[var(--muted-foreground)] space-y-0.5">
       <div>
-        {PACKAGE_OUTLINE_LABELS[pkg.packageOutline]}
-        {pkg.packages[0] ? ` · ${pkg.packages[0]}` : ""}
+        {PACKAGE_OUTLINE_LABELS[mechanicalOutline]}
+        {packageLabel ? ` · ${packageLabel}` : pkg.packages[0] ? ` · ${pkg.packages[0]}` : ""}
       </div>
       <div>
         {pkg.outputType} · axis {pkg.sensingAxis.toUpperCase()}
@@ -133,6 +142,7 @@ function SensorCatalogModal({
 
   useEffect(() => {
     if (!open) return;
+    warmPackageThumbs(allPackageModels());
     setFilters(DEFAULT_SENSOR_CATALOG_FILTERS);
     const t = window.setTimeout(() => searchRef.current?.focus(), 30);
     const onKey = (e: KeyboardEvent) => {
@@ -193,7 +203,7 @@ function SensorCatalogModal({
             <p className="font-mono text-xs text-[var(--muted-foreground)] mt-0.5">
               {loading
                 ? "Loading parts…"
-                : `${filtered.length} of ${packages.length} parts · package meshes by outline`}
+                : `${filtered.length} of ${packages.length} parts · official package STEP previews`}
             </p>
           </div>
           <button
@@ -250,6 +260,11 @@ function SensorCatalogModal({
                   >
                     <PackageThumb
                       outline={pkg.packageOutline}
+                      packageLabel={
+                        pkg.packageVariants?.find(
+                          (v) => v.outline === pkg.packageOutline,
+                        )?.label ?? pkg.packages[0]
+                      }
                       hallType={pkg.hallType}
                       size={64}
                     />
@@ -289,6 +304,12 @@ function SensorCatalogModal({
 export function SensorPackageFields() {
   const sensorPackageId = useSimulatorStore((s) => s.sensorPackageId);
   const setSensorPackageId = useSimulatorStore((s) => s.setSensorPackageId);
+  const sensorPackageVariantId = useSimulatorStore(
+    (s) => s.sensorPackageVariantId,
+  );
+  const setSensorPackageVariantId = useSimulatorStore(
+    (s) => s.setSensorPackageVariantId,
+  );
   const setSensorCatalog = useSimulatorStore((s) => s.setSensorCatalog);
   const packages = useSimulatorStore((s) => s.sensorCatalog);
   const supplyVdd = useSimulatorStore((s) => s.supplyVdd);
@@ -325,6 +346,18 @@ export function SensorPackageFields() {
 
   const selected =
     packages.find((pkg) => pkg.id === sensorPackageId) ?? null;
+  const selectedVariant = resolvePackageVariant(
+    selected,
+    sensorPackageVariantId,
+  );
+  const variantOptions = useMemo(
+    () =>
+      (selected?.packageVariants ?? []).map((v) => ({
+        value: v.id,
+        label: `${v.label} · ${PACKAGE_OUTLINE_LABELS[v.outline]}`,
+      })),
+    [selected],
+  );
   const selectedColor = selected
     ? hallTypeColor(selected.hallType)
     : hallTypeColor("linear");
@@ -346,7 +379,10 @@ export function SensorPackageFields() {
         ) : selected ? (
           <div className="flex gap-3 items-start">
             <PackageThumb
-              outline={selected.packageOutline}
+              outline={selectedVariant?.outline ?? selected.packageOutline}
+              packageLabel={
+                selectedVariant?.label ?? selected.packages[0]
+              }
               hallType={selected.hallType}
               size={58}
             />
@@ -354,7 +390,7 @@ export function SensorPackageFields() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-mono text-xs uppercase tracking-widest text-[var(--muted-foreground)] mb-1">
-                    Selected package
+                    Selected part
                   </div>
                   <div className="font-mono text-sm font-semibold text-[var(--foreground)]">
                     {selected.partNumber}
@@ -365,7 +401,12 @@ export function SensorPackageFields() {
               <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed line-clamp-2">
                 {selected.description}
               </p>
-              <PackageMeta pkg={selected} supplyV={operateSupply} />
+              <PackageMeta
+                pkg={selected}
+                supplyV={operateSupply}
+                packageLabel={selectedVariant?.label}
+                outline={selectedVariant?.outline}
+              />
             </div>
           </div>
         ) : (
@@ -376,6 +417,25 @@ export function SensorPackageFields() {
           </p>
         )}
       </div>
+
+      {selected && variantOptions.length > 0 && (
+        <div className="space-y-1.5">
+          <SelectInput
+            label="Package type"
+            value={selectedVariant?.id ?? variantOptions[0].value}
+            options={variantOptions}
+            onChange={(id) => setSensorPackageVariantId(id)}
+          />
+          <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed">
+            Field is sampled at the Hall plate for this package (datasheet
+            Sensor Location). Offset{" "}
+            {selectedVariant
+              ? `(${selectedVariant.dieOffsetMm.x}, ${selectedVariant.dieOffsetMm.y}, ${selectedVariant.dieOffsetMm.z}) mm`
+              : "(0, 0, 0) mm"}{" "}
+            from package centre.
+          </p>
+        </div>
+      )}
 
       {selected && (
         <div className="space-y-1.5">

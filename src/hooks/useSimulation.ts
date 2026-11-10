@@ -15,7 +15,9 @@ export function useSimulation(): {
     const {
       magnet,
       sensor,
+      sensorRotation,
       sensorPackageId,
+      sensorPackageVariantId,
       sensorCatalog,
       supplyVdd,
       animation,
@@ -33,10 +35,12 @@ export function useSimulation(): {
       const result = await runSimulation({
         magnet,
         sensor,
+        sensorRotation,
         movement: animation,
         fps,
         duration,
         sensorPackageId,
+        sensorPackageVariantId,
         supply,
       });
 

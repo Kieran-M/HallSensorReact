@@ -1,6 +1,7 @@
 /**
  * Package outline visuals + Hall-type accent colors.
- * Outlines are approximate mechanical families (not vendor STEP/GLTF assets).
+ * Official Diodes STEP→GLB meshes are used when available (see packageModels);
+ * SC59 / SOT553 still use procedural family meshes.
  */
 
 import type { HallType, PackageOutline } from "../types/simulation";
@@ -26,7 +27,7 @@ export const HALL_TYPE_COLORS: Record<
 export const PACKAGE_OUTLINE_LABELS: Record<PackageOutline, string> = {
   sot23: "SOT-23",
   sc59: "SC59",
-  sot553: "SOT-553",
+  sot553: "SOT-553 / TSOT25",
   sip3: "SIP-3 / TO-92",
   dfn: "DFN / WLB",
 };

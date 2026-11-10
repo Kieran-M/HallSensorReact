@@ -372,6 +372,11 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
                     >
                       <PackageThumb
                         outline={pkg.packageOutline}
+                        packageLabel={
+                          pkg.packageVariants?.find(
+                            (v) => v.outline === pkg.packageOutline,
+                          )?.label ?? pkg.packages[0]
+                        }
                         hallType={pkg.hallType}
                         size={52}
                       />
@@ -451,6 +456,12 @@ export function CustomSetupFlow({ onCancel }: CustomSetupFlowProps) {
                     <div className="flex gap-2 items-start">
                       <PackageThumb
                         outline={selectedSensor.packageOutline}
+                        packageLabel={
+                          selectedSensor.packageVariants?.find(
+                            (v) =>
+                              v.outline === selectedSensor.packageOutline,
+                          )?.label ?? selectedSensor.packages[0]
+                        }
                         hallType={selectedSensor.hallType}
                         size={44}
                       />

@@ -88,7 +88,11 @@ interface SimulatorStore {
   ) => void;
 
   sensor: SensorPosition;
+  /** Package Euler orientation (deg XYZ); die offset / sensing axis follow this. */
+  sensorRotation: XYZ;
   sensorPackageId: string;
+  /** Mechanical package variant id (SC59, SOT23, TO92S, …). */
+  sensorPackageVariantId: string | null;
   sensorCatalog: SensorPackageInfo[];
   /**
    * Operate supply (VDD) for ratiometric linear parts.
@@ -96,7 +100,9 @@ interface SimulatorStore {
    */
   supplyVdd: number | null;
   setSensorPosition: (sensor: SensorPosition) => void;
+  setSensorRotation: (rotation: XYZ) => void;
   setSensorPackageId: (id: string) => void;
+  setSensorPackageVariantId: (id: string | null) => void;
   setSensorCatalog: (packages: SensorPackageInfo[]) => void;
   setSupplyVdd: (supply: number | null) => void;
 
@@ -211,22 +217,51 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     y: 0,
     z: 0,
   },
+  sensorRotation: { x: 0, y: 0, z: 0 },
   sensorPackageId: "ah49f",
+  sensorPackageVariantId: null,
   sensorCatalog: [],
   supplyVdd: null,
 
   setSensorPosition: (sensor) => set({ sensor, activePreset: null }),
+  setSensorRotation: (sensorRotation) =>
+    set({ sensorRotation, activePreset: null }),
   setSensorPackageId: (sensorPackageId) =>
     set((state) => {
       const pkg = state.sensorCatalog.find((p) => p.id === sensorPackageId);
+      const defaultVariant =
+        pkg?.packageVariants?.find((v) => v.outline === pkg.packageOutline)
+          ?.id ??
+        pkg?.packageVariants?.[0]?.id ??
+        null;
       return {
         sensorPackageId,
+        sensorPackageVariantId: defaultVariant,
         // Reset VDD to the new package default when picking a part
         supplyVdd: pkg?.supply ?? null,
         activePreset: null,
       };
     }),
-  setSensorCatalog: (sensorCatalog) => set({ sensorCatalog }),
+  setSensorPackageVariantId: (sensorPackageVariantId) =>
+    set({ sensorPackageVariantId, activePreset: null }),
+  setSensorCatalog: (sensorCatalog) =>
+    set((state) => {
+      const pkg = sensorCatalog.find((p) => p.id === state.sensorPackageId);
+      const stillValid = pkg?.packageVariants?.some(
+        (v) => v.id === state.sensorPackageVariantId,
+      );
+      const defaultVariant =
+        pkg?.packageVariants?.find((v) => v.outline === pkg.packageOutline)
+          ?.id ??
+        pkg?.packageVariants?.[0]?.id ??
+        null;
+      return {
+        sensorCatalog,
+        sensorPackageVariantId: stillValid
+          ? state.sensorPackageVariantId
+          : defaultVariant,
+      };
+    }),
   setSupplyVdd: (supplyVdd) => set({ supplyVdd, activePreset: null }),
 
   activePreset: null,
@@ -237,10 +272,12 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
     set({
       magnet: preset.magnet,
       sensor: preset.sensor,
+      sensorRotation: { x: 0, y: 0, z: 0 },
       animation: preset.animation,
       duration: preset.duration,
       fps: preset.fps,
       sensorPackageId: preset.sensorPackageId,
+      sensorPackageVariantId: null,
       supplyVdd: null,
       activePreset: { id: preset.meta.id, label: preset.meta.label },
       mode: "edit",
@@ -262,10 +299,16 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
       return {
         magnet: SHAPE_DEFAULTS[magnetShape],
         sensor: { x: 0, y: 0, z: 0 },
+        sensorRotation: { x: 0, y: 0, z: 0 },
         animation: defaultAnimationForType(motionType),
         duration: 3,
         fps: 60,
         sensorPackageId,
+        sensorPackageVariantId:
+          pkg?.packageVariants?.find((v) => v.outline === pkg.packageOutline)
+            ?.id ??
+          pkg?.packageVariants?.[0]?.id ??
+          null,
         supplyVdd: pkg?.supply ?? null,
         activePreset: { id: "custom", label: "Custom Setup" },
         mode: "edit" as const,

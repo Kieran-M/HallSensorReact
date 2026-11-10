@@ -11,6 +11,7 @@ import { SimulationPlayback } from "../SimulatorPlayback";
 import { useSimulatorStore } from "../../../store/simulatorStore";
 import { WORLD_UP } from "../../../types/camera";
 import { useTheme } from "../../ui/Theme";
+import { activeMechanicalPackage } from "../../../lib/activeSensorPackage";
 import { mmToWorld } from "../../../lib/utils";
 
 function readCssVar(name: string, fallback: string): string {
@@ -33,7 +34,11 @@ interface DesignViewProps {
 export function DesignView({ active = true }: DesignViewProps) {
   const magnet = useSimulatorStore((s) => s.magnet);
   const sensor = useSimulatorStore((s) => s.sensor);
+  const sensorRotation = useSimulatorStore((s) => s.sensorRotation);
   const sensorPackageId = useSimulatorStore((s) => s.sensorPackageId);
+  const sensorPackageVariantId = useSimulatorStore(
+    (s) => s.sensorPackageVariantId,
+  );
   const sensorCatalog = useSimulatorStore((s) => s.sensorCatalog);
   const simulationPackage = useSimulatorStore((s) => s.simulation?.sensorPackage);
   const cameraView = useSimulatorStore((s) => s.cameraView);
@@ -45,12 +50,16 @@ export function DesignView({ active = true }: DesignViewProps) {
     simulationPackage ??
     sensorCatalog.find((p) => p.id === sensorPackageId) ??
     null;
+  const mechanical = activeMechanicalPackage(
+    activePackage,
+    sensorPackageVariantId,
+  );
 
   const { canvasBg, gridCell, gridSection } = useMemo(
     () => ({
-      canvasBg: readCssVar("--canvas", "#0c1f30"),
-      gridCell: readCssVar("--grid-cell", "#4a7fa3"),
-      gridSection: readCssVar("--grid-section", "#8ec5e0"),
+      canvasBg: readCssVar("--canvas", "#e8f2f7"),
+      gridCell: readCssVar("--grid-cell", "#a8c2d6"),
+      gridSection: readCssVar("--grid-section", "#7a9fb8"),
     }),
     [theme],
   );
@@ -90,8 +99,15 @@ export function DesignView({ active = true }: DesignViewProps) {
               mmToWorld(sensor.y),
               mmToWorld(sensor.z),
             ]}
-            outline={activePackage?.packageOutline ?? "sot23"}
+            rotation={[
+              (sensorRotation.x * Math.PI) / 180,
+              (sensorRotation.y * Math.PI) / 180,
+              (sensorRotation.z * Math.PI) / 180,
+            ]}
+            outline={mechanical.outline}
+            packageLabel={mechanical.label}
             hallType={activePackage?.hallType ?? "linear"}
+            dieOffsetMm={mechanical.dieOffsetMm}
           />
 
           {/* Default drei Grid is XZ; rotate onto XY so +Z is board normal / up */}
@@ -101,11 +117,11 @@ export function DesignView({ active = true }: DesignViewProps) {
             args={[1, 1]}
             cellSize={0.005}
             sectionSize={0.05}
-            cellThickness={theme === "dark" ? 0.85 : 0.65}
-            sectionThickness={theme === "dark" ? 1.35 : 1.15}
-            fadeDistance={4.5}
-            fadeStrength={1.75}
-            fadeFrom={0.35}
+            cellThickness={theme === "dark" ? 0.45 : 0.5}
+            sectionThickness={theme === "dark" ? 0.75 : 0.7}
+            fadeDistance={5.5}
+            fadeStrength={2.1}
+            fadeFrom={0.4}
             cellColor={gridCell}
             sectionColor={gridSection}
           />

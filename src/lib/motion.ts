@@ -1,10 +1,11 @@
 /**
  * Client-side motion preview for the design viewport.
- * Keep kinematics aligned with backend `_pose_at` in app/services/simulator.py
+ * Keep kinematics aligned with backend app/services/motion.py
  * (mm/deg in UI space, metres/rad out).
  */
 import * as THREE from "three";
-import type { AnimationParams } from "../store/simulatorStore";
+import type { AnimationParams, XYZ } from "../types/motion";
+import { ZERO_XYZ, hingeArmLengthMm } from "../types/motion";
 import { mmToWorld } from "./utils";
 
 export type Pose = {
@@ -18,18 +19,13 @@ function axisUnit(axis: "x" | "y" | "z"): THREE.Vector3 {
   return new THREE.Vector3(0, 0, 1);
 }
 
-/**
- * Rest offset for hinge arm at 0° (perpendicular to the hinge axis).
- * Axis Y/Z → along +X; axis X → along +Y.
- *
- * UI hinge angles are lid-style: 0° = closed (rest), positive = open toward
- * Magpylib +Z when the pin allows (X or Y). Convert with {@link hingeUiToRhAngle}
- * before applying a right-hand rotvec.
- */
-function restOffset(axis: "x" | "y" | "z", armLengthMm: number): THREE.Vector3 {
+/** Legacy rest ray when only armLength is known. */
+function legacyRestOffset(
+  axis: "x" | "y" | "z",
+  armLengthMm: number,
+): THREE.Vector3 {
   const L = mmToWorld(armLengthMm);
   if (axis === "x") return new THREE.Vector3(0, L, 0);
-  if (axis === "y") return new THREE.Vector3(L, 0, 0);
   return new THREE.Vector3(L, 0, 0);
 }
 
@@ -48,6 +44,33 @@ function bounceU(t: number): number {
   const u = Math.min(Math.max(t, 0), 1);
   if (u <= 0.5) return u * 2;
   return 2 - u * 2;
+}
+
+function eulerDegToRad(e: XYZ): [number, number, number] {
+  return [
+    THREE.MathUtils.degToRad(e.x),
+    THREE.MathUtils.degToRad(e.y),
+    THREE.MathUtils.degToRad(e.z),
+  ];
+}
+
+function composeAxisSpinWithBase(
+  axis: "x" | "y" | "z",
+  spinRad: number,
+  baseDeg: XYZ,
+): [number, number, number] {
+  const spin = new THREE.Euler(
+    axis === "x" ? spinRad : 0,
+    axis === "y" ? spinRad : 0,
+    axis === "z" ? spinRad : 0,
+    "XYZ",
+  );
+  const base = new THREE.Euler(...eulerDegToRad(baseDeg), "XYZ");
+  const q = new THREE.Quaternion()
+    .setFromEuler(spin)
+    .multiply(new THREE.Quaternion().setFromEuler(base));
+  const out = new THREE.Euler().setFromQuaternion(q, "XYZ");
+  return [out.x, out.y, out.z];
 }
 
 /**
@@ -83,24 +106,18 @@ export function evaluateMotionPose(animation: AnimationParams, t: number): Pose 
     const angleDeg =
       animation.startAngle + (animation.endAngle - animation.startAngle) * u;
     const angleRad = THREE.MathUtils.degToRad(angleDeg);
-    // Continuous axis euler (no quaternion→euler wrap at 360°)
-    const rotation: [number, number, number] =
-      animation.axis === "x"
-        ? [angleRad, 0, 0]
-        : animation.axis === "y"
-          ? [0, angleRad, 0]
-          : [0, 0, angleRad];
+    const base = animation.baseRotation ?? ZERO_XYZ;
     return {
       position: [
         mmToWorld(animation.position.x),
         mmToWorld(animation.position.y),
         mmToWorld(animation.position.z),
       ],
-      rotation,
+      rotation: composeAxisSpinWithBase(animation.axis, angleRad, base),
     };
   }
 
-  // hinge: magnet rides an arc about pivot (UI angle → RH for pose)
+  // hinge: rotate originPosition about fixed pivot
   const pathU = animation.bounce ? bounceU(u) : u;
   const uiAngleDeg =
     animation.startAngle + (animation.endAngle - animation.startAngle) * pathU;
@@ -108,24 +125,26 @@ export function evaluateMotionPose(animation: AnimationParams, t: number): Pose 
     hingeUiToRhAngle(animation.axis, uiAngleDeg),
   );
   const pivot = new THREE.Vector3(
-    mmToWorld(animation.pivot.x),
-    mmToWorld(animation.pivot.y),
-    mmToWorld(animation.pivot.z),
+    mmToWorld(animation.pivot?.x ?? 0),
+    mmToWorld(animation.pivot?.y ?? 0),
+    mmToWorld(animation.pivot?.z ?? 0),
   );
-  const offset = restOffset(animation.axis, animation.armLength);
+  const origin = animation.originPosition;
+  const offset =
+    origin != null
+      ? new THREE.Vector3(
+          mmToWorld(origin.x) - pivot.x,
+          mmToWorld(origin.y) - pivot.y,
+          mmToWorld(origin.z) - pivot.z,
+        )
+      : legacyRestOffset(animation.axis, animation.armLength ?? 0);
   offset.applyAxisAngle(axisUnit(animation.axis), rhAngleRad);
   const pos = pivot.clone().add(offset);
-
-  const rotation: [number, number, number] =
-    animation.axis === "x"
-      ? [rhAngleRad, 0, 0]
-      : animation.axis === "y"
-        ? [0, rhAngleRad, 0]
-        : [0, 0, rhAngleRad];
+  const base = animation.baseRotation ?? ZERO_XYZ;
 
   return {
     position: [pos.x, pos.y, pos.z],
-    rotation,
+    rotation: composeAxisSpinWithBase(animation.axis, rhAngleRad, base),
   };
 }
 
@@ -166,3 +185,5 @@ export function pathHasTranslation(poses: Pose[], epsilon = 1e-5): boolean {
   }
   return false;
 }
+
+export { hingeArmLengthMm };

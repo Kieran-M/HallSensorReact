@@ -31,10 +31,10 @@
   --brand-navy-muted: #1c3d58;
   --brand-navy-border: #356084;
   --brand-navy-grid: #2a5574;
-  --brand-navy-canvas: #0c1f30;
+  --brand-navy-canvas: #102536;
   /* Sub-grid must stay clearly above canvas in dark mode */
-  --brand-navy-grid-cell: #4a7fa3;
-  --brand-navy-grid-section: #8ec5e0;
+  --brand-navy-grid-cell: #2a4a63;
+  --brand-navy-grid-section: #3d6a88;
 
   --sans: "Segoe UI", system-ui, sans-serif;
   --heading: "Segoe UI", system-ui, sans-serif;
@@ -52,9 +52,9 @@
   --accent-foreground: var(--brand-white);
   --border: #9bb9d0;
   --chart-grid: #b7cfe0;
-  --canvas: #c5e0ec;
-  --grid-cell: #5a8fb8;
-  --grid-section: var(--diodes-blue);
+  --canvas: #e8f2f7;
+  --grid-cell: #a8c2d6;
+  --grid-section: #7a9fb8;
 
   /* Readable base for mono-heavy UI */
   font: 18px/155% var(--sans);
@@ -99,9 +99,9 @@
   --accent-foreground: var(--brand-white);
   --border: #9bb9d0;
   --chart-grid: #b7cfe0;
-  --canvas: #c5e0ec;
-  --grid-cell: #5a8fb8;
-  --grid-section: var(--diodes-blue);
+  --canvas: #e8f2f7;
+  --grid-cell: #a8c2d6;
+  --grid-section: #7a9fb8;
 }
 
 #root {

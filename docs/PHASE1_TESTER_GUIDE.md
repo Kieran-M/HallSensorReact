@@ -240,14 +240,17 @@ Use these as a checklist. Mark Pass / Fail / Notes. Failures should include brow
 
 ## 6. Known limitations (please read once)
 
-1. **Magpylib ideal magnets** — uniform polarization; no soft iron, shielding, or package die offset. Fields are simulated, not measured.  
-2. **Field drivers** — geometry + remanence (Br) + optional linear temperature demag of Br. Material/grade set typical Br (and temp coeff); coercivity is not used in B.  
-3. **Poles** — bar / diametric ring / axial ring support valid multipole counts; cylinders and spheres remain 2-pole.  
-4. **Digital model** — typical Bop/Brp; simplified output rails (open-drain / dual-output parts are not fully represented).  
-5. **Sensing axis** — catalog parts use a fixed sensing-axis convention in Phase 1.  
-6. **Linear catalog** — Phase 1 includes a small linear set (e.g. AH49F, AH850x), plus a larger digital switch catalog.  
-7. **Custom setup** — intentional starting point; presets are better for first-look “application example” curves.  
-8. **Exports** — CSV/PDF include setup metadata and the Magpylib evaluation disclaimer.
+1. **Magpylib ideal magnets** — uniform polarization; no soft iron or shielding. Fields are simulated, not measured.  
+2. **Hall-plate offset** — when a datasheet Sensor Location is known, Magpylib samples at package centre + rotated die offset (not only the UI XYZ). Parts without a known offset still sample at the package centre.  
+3. **Field drivers** — geometry + remanence (Br) + optional linear temperature demag of Br. Material/grade set typical Br (and temp coeff); coercivity is not used in B.  
+4. **Poles** — bar / diametric ring / axial ring support valid multipole counts; cylinders and spheres remain 2-pole.  
+5. **Digital model** — typical Bop/Brp; simplified output rails (open-drain / dual-output parts are not fully represented).  
+6. **Sensing axis** — catalog sensing axis is rotated by sensor orientation into world before projecting B.  
+7. **Linear catalog** — Phase 1 includes a small linear set (e.g. AH49F, AH850x), plus a larger digital switch catalog.  
+8. **Custom setup** — intentional starting point; presets are better for first-look “application example” curves.  
+9. **Exports** — CSV/PDF include setup metadata and the Magpylib evaluation disclaimer.  
+10. **Package meshes** — SOT23 / SIP-3 (TO-92S) / DFN1010 / DFN1410 / DFN2020 use official Diodes STEP→GLB assets where available; SC59 and SOT553/TSOT25 remain procedural (no public STEP).  
+11. **Hinge motion** — pivot fixed at (0,0,0); Origin Position is the magnet centre at 0° and may include X/Y/Z offset (TIMSS-style).
 
 If something looks wrong **within** these limits, still report it — but label whether you believe it is a **bug** or a **Phase 1 scope gap**.
 

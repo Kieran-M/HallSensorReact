@@ -17,8 +17,12 @@ export interface SimulationRequest {
   fps: number;
   duration: number;
   sensorPackageId: string;
+  /** Mechanical package variant id (SC59 / SOT23 / …). */
+  sensorPackageVariantId?: string | null;
   /** Optional operate supply (VDD); omits → package catalog default. */
   supply?: number;
+  /** Package Euler orientation (deg, intrinsic XYZ — matches Three.js). */
+  sensorRotation?: SensorPosition;
 }
 
 export interface ApiHealth {

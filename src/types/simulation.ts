@@ -20,6 +20,13 @@ export interface RatiometricSensitivityModel {
   intercept: number;
 }
 
+export interface PackageVariantInfo {
+  id: string;
+  label: string;
+  outline: PackageOutline;
+  dieOffsetMm: { x: number; y: number; z: number };
+}
+
 export interface SensorPackageInfo {
   id: string;
   partNumber: string;
@@ -39,6 +46,10 @@ export interface SensorPackageInfo {
   packageOutline: PackageOutline;
   /** Absolute Diodes datasheet URL when available. */
   datasheetUrl?: string | null;
+  /** Hall-plate offset from package centre (mm), package frame. */
+  dieOffsetMm?: { x: number; y: number; z: number } | null;
+  /** Selectable mechanical packages (outline + die offset). */
+  packageVariants?: PackageVariantInfo[];
 }
 
 export interface SimulationFrame {
@@ -84,6 +95,29 @@ function isPackageOutline(value: unknown): value is PackageOutline {
   );
 }
 
+function isDieOffsetMm(
+  value: unknown,
+): value is { x: number; y: number; z: number } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { x?: unknown }).x === "number" &&
+    typeof (value as { y?: unknown }).y === "number" &&
+    typeof (value as { z?: unknown }).z === "number"
+  );
+}
+
+function isPackageVariantInfo(value: unknown): value is PackageVariantInfo {
+  if (typeof value !== "object" || value === null) return false;
+  const o = value as Record<string, unknown>;
+  return (
+    typeof o.id === "string" &&
+    typeof o.label === "string" &&
+    isPackageOutline(o.outline) &&
+    isDieOffsetMm(o.dieOffsetMm)
+  );
+}
+
 export function isSensorPackageInfo(
   value: unknown,
 ): value is SensorPackageInfo {
@@ -99,7 +133,35 @@ export function isSensorPackageInfo(
     typeof o.outputType === "string" &&
     Array.isArray(o.packages) &&
     o.packages.every((p) => typeof p === "string") &&
-    isPackageOutline(o.packageOutline)
+    isPackageOutline(o.packageOutline) &&
+    (o.dieOffsetMm == null || isDieOffsetMm(o.dieOffsetMm)) &&
+    (o.packageVariants == null ||
+      (Array.isArray(o.packageVariants) &&
+        o.packageVariants.every(isPackageVariantInfo)))
+  );
+}
+
+/** Resolve the active mechanical variant for mesh + Magpylib sampling. */
+export function resolvePackageVariant(
+  pkg: SensorPackageInfo | null | undefined,
+  variantId?: string | null,
+): PackageVariantInfo | null {
+  if (!pkg) return null;
+  const variants = pkg.packageVariants ?? [];
+  if (variants.length === 0) {
+    return {
+      id: pkg.packageOutline,
+      label: pkg.packages[0] ?? pkg.packageOutline,
+      outline: pkg.packageOutline,
+      dieOffsetMm: pkg.dieOffsetMm ?? { x: 0, y: 0, z: 0 },
+    };
+  }
+  if (variantId) {
+    const match = variants.find((v) => v.id === variantId);
+    if (match) return match;
+  }
+  return (
+    variants.find((v) => v.outline === pkg.packageOutline) ?? variants[0]
   );
 }
 

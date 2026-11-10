@@ -148,13 +148,15 @@ export const PRESETS: Record<string, PresetSetup> = {
     sensor: { x: 30, y: 0, z: -3 },
     animation: {
       type: "hinge",
+      // Magnet at 0° (closed); free XYZ offset from fixed pivot at origin.
+      originPosition: { x: 30, y: 0, z: 0 },
       pivot: { x: 0, y: 0, z: 0 },
-      // +Y pin: XZ lid plane. Positive UI angle = open toward +Z.
       axis: "y",
       armLength: 30,
       startAngle: 55,
       endAngle: 0,
       bounce: false,
+      baseRotation: { x: 0, y: 0, z: 0 },
     },
     duration: 1.8,
     fps: 60,
@@ -191,6 +193,7 @@ export const PRESETS: Record<string, PresetSetup> = {
       axis: "z",
       startAngle: 0,
       endAngle: 360,
+      baseRotation: { x: 0, y: 0, z: 0 },
     },
     duration: 3,
     fps: 60,
@@ -229,6 +232,7 @@ export const PRESETS: Record<string, PresetSetup> = {
       axis: "z",
       startAngle: 0,
       endAngle: 360,
+      baseRotation: { x: 0, y: 0, z: 0 },
     },
     duration: 2,
     fps: 60,

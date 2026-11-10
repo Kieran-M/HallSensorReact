@@ -1,0 +1,44 @@
+{
+  "sot23": {
+    "step": "SOT23.stp",
+    "glb": "/models/packages/sot23.glb",
+    "bytes": 36516
+  },
+  "sip3": {
+    "step": "TO-92S.stp",
+    "glb": "/models/packages/sip3.glb",
+    "bytes": 125188
+  },
+  "dfn1410": {
+    "step": "DFN1410A-4.stp",
+    "labels": ["X2-DFN1410-4", "DFN1410A-4"],
+    "glb": "/models/packages/dfn.glb",
+    "bytes": 72792,
+    "rotation": [0, 0, 0]
+  },
+  "dfn1010": {
+    "step": "DFN1010H4B-4.stp",
+    "labels": ["X2-DFN1010-4 (Type B)", "DFN1010H4B-4"],
+    "glb": "/models/packages/dfn1010h4b-4.glb",
+    "bytes": 41052,
+    "rotation": [0, 1.5707963267948966, 0],
+    "note": "STEP thickness on +X; Ry(+π/2) → Magpylib +Z"
+  },
+  "dfn2020": {
+    "step": "U-DFN2020-6.stp",
+    "labels": ["U-DFN2020-6"],
+    "glb": "/models/packages/u-dfn2020-6.glb",
+    "bytes": 72980,
+    "rotation": [1.5707963267948966, 0, 0]
+  },
+  "sc59": {
+    "step": null,
+    "glb": null,
+    "note": "No STEP on diodes.com; use procedural mesh"
+  },
+  "sot553": {
+    "step": null,
+    "glb": null,
+    "note": "No STEP on diodes.com; use procedural mesh"
+  }
+}

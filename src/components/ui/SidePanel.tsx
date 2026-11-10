@@ -36,6 +36,8 @@ export function SidePanel() {
   const setMotionType = useSimulatorStore((s) => s.setMotionType)
   const patchAnimation = useSimulatorStore((s) => s.patchAnimation)
   const setSensorPosition = useSimulatorStore((s) => s.setSensorPosition)
+  const sensorRotation = useSimulatorStore((s) => s.sensorRotation)
+  const setSensorRotation = useSimulatorStore((s) => s.setSensorRotation)
   const setDuration = useSimulatorStore((s) => s.setDuration)
   const setFps = useSimulatorStore((s) => s.setFps)
   const { simulate, simulating, simulationError } = useSimulation()
@@ -176,6 +178,25 @@ export function SidePanel() {
             step={0.1}
             unit="mm"
           />
+          <XYZGroup
+            label="Orientation"
+            xVal={sensorRotation.x}
+            yVal={sensorRotation.y}
+            zVal={sensorRotation.z}
+            onX={(x) => setSensorRotation({ ...sensorRotation, x })}
+            onY={(y) => setSensorRotation({ ...sensorRotation, y })}
+            onZ={(z) => setSensorRotation({ ...sensorRotation, z })}
+            min={-360}
+            max={360}
+            step={1}
+            unit="°"
+          />
+          <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed">
+            Position is the package centre. Orientation (deg, XYZ) rotates the
+            package, Hall-plate offset, and sensing axis together. Magpylib
+            samples the Hall plate for the selected package type (see Sensor →
+            Package type).
+          </p>
         </Accordion>
 
         {/* ── Motion ── */}

@@ -5,6 +5,7 @@ import type {
   MotionType,
   XYZ,
 } from '../../../types/motion'
+import { ZERO_XYZ, hingeArmLengthMm } from '../../../types/motion'
 import type { MagnetParams } from '../../../types/magnet'
 import {
   faceAirGapMm,
@@ -278,30 +279,94 @@ export function MotionFields({
             step={1}
             unit="°"
           />
+          <XYZGroup
+            label="Base Orientation"
+            xVal={(animation.baseRotation ?? ZERO_XYZ).x}
+            yVal={(animation.baseRotation ?? ZERO_XYZ).y}
+            zVal={(animation.baseRotation ?? ZERO_XYZ).z}
+            onX={(x) =>
+              patchAnimation({
+                baseRotation: patchXYZ(
+                  animation.baseRotation ?? ZERO_XYZ,
+                  'x',
+                  x,
+                ),
+              })
+            }
+            onY={(y) =>
+              patchAnimation({
+                baseRotation: patchXYZ(
+                  animation.baseRotation ?? ZERO_XYZ,
+                  'y',
+                  y,
+                ),
+              })
+            }
+            onZ={(z) =>
+              patchAnimation({
+                baseRotation: patchXYZ(
+                  animation.baseRotation ?? ZERO_XYZ,
+                  'z',
+                  z,
+                ),
+              })
+            }
+            min={-360}
+            max={360}
+            step={1}
+            unit="°"
+          />
         </>
       )}
 
       {animation.type === 'hinge' && (
         <>
           <p className="font-mono text-xs text-[var(--muted-foreground)] leading-relaxed">
-            Hinge axis is the pin (axle). At 0° the arm is closed along +X (or
-            +Y if axis is X). Positive angles open the lid up toward +Z;
-            negative angles swing under the board.
+            Hinge pivot is fixed at the world origin. Origin Position is the
+            magnet centre at 0° (may include X/Y/Z offset). Positive angles open
+            toward +Z for axis X/Y; negative swings under the board.
           </p>
           <XYZGroup
-            label="Hinge Pivot"
-            xVal={animation.pivot.x}
-            yVal={animation.pivot.y}
-            zVal={animation.pivot.z}
-            onX={(x) =>
-              patchAnimation({ pivot: patchXYZ(animation.pivot, 'x', x) })
-            }
-            onY={(y) =>
-              patchAnimation({ pivot: patchXYZ(animation.pivot, 'y', y) })
-            }
-            onZ={(z) =>
-              patchAnimation({ pivot: patchXYZ(animation.pivot, 'z', z) })
-            }
+            label="Origin Position"
+            xVal={animation.originPosition.x}
+            yVal={animation.originPosition.y}
+            zVal={animation.originPosition.z}
+            onX={(x) => {
+              const originPosition = patchXYZ(
+                animation.originPosition,
+                'x',
+                x,
+              )
+              patchAnimation({
+                originPosition,
+                pivot: { ...ZERO_XYZ },
+                armLength: hingeArmLengthMm(originPosition),
+              })
+            }}
+            onY={(y) => {
+              const originPosition = patchXYZ(
+                animation.originPosition,
+                'y',
+                y,
+              )
+              patchAnimation({
+                originPosition,
+                pivot: { ...ZERO_XYZ },
+                armLength: hingeArmLengthMm(originPosition),
+              })
+            }}
+            onZ={(z) => {
+              const originPosition = patchXYZ(
+                animation.originPosition,
+                'z',
+                z,
+              )
+              patchAnimation({
+                originPosition,
+                pivot: { ...ZERO_XYZ },
+                armLength: hingeArmLengthMm(originPosition),
+              })
+            }}
             min={-1000}
             max={1000}
             step={0.1}
@@ -313,15 +378,14 @@ export function MotionFields({
             options={AXES}
             onChange={(axis) => patchAnimation({ axis })}
           />
-          <NumberInput
-            label="Arm Length"
-            value={animation.armLength}
-            onChange={(armLength) => patchAnimation({ armLength })}
-            min={0.1}
-            max={1000}
-            step={0.1}
-            unit="mm"
-          />
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <span className="font-mono text-sm uppercase tracking-wide text-[var(--muted-foreground)]">
+              Arm Length
+            </span>
+            <span className="font-mono text-sm tabular-nums text-[var(--foreground)]">
+              {hingeArmLengthMm(animation.originPosition).toFixed(2)} mm
+            </span>
+          </div>
           <NumberInput
             label="Start Angle"
             value={animation.startAngle}
@@ -337,6 +401,43 @@ export function MotionFields({
             onChange={(endAngle) => patchAnimation({ endAngle })}
             min={-180}
             max={180}
+            step={1}
+            unit="°"
+          />
+          <XYZGroup
+            label="Base Orientation"
+            xVal={(animation.baseRotation ?? ZERO_XYZ).x}
+            yVal={(animation.baseRotation ?? ZERO_XYZ).y}
+            zVal={(animation.baseRotation ?? ZERO_XYZ).z}
+            onX={(x) =>
+              patchAnimation({
+                baseRotation: patchXYZ(
+                  animation.baseRotation ?? ZERO_XYZ,
+                  'x',
+                  x,
+                ),
+              })
+            }
+            onY={(y) =>
+              patchAnimation({
+                baseRotation: patchXYZ(
+                  animation.baseRotation ?? ZERO_XYZ,
+                  'y',
+                  y,
+                ),
+              })
+            }
+            onZ={(z) =>
+              patchAnimation({
+                baseRotation: patchXYZ(
+                  animation.baseRotation ?? ZERO_XYZ,
+                  'z',
+                  z,
+                ),
+              })
+            }
+            min={-360}
+            max={360}
             step={1}
             unit="°"
           />
